@@ -7,7 +7,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_mixer CONFIG REQUIRED)
 
-add_executable(GameEngine src/main.cpp src/Entity.cpp src/AudioManager.cpp src/GameplayScene.cpp)
-target_include_directories(GameEngine PRIVATE include)
+# --- Engine library ---
+add_library(Engine STATIC
+    Engine/src/Engine/Entity.cpp
+    Engine/src/Engine/AudioManager.cpp
+)
+target_include_directories(Engine PUBLIC Engine/include)
+target_link_libraries(Engine PUBLIC SDL2::SDL2 SDL2::SDL2main SDL2_mixer::SDL2_mixer)
 
-target_link_libraries(GameEngine PRIVATE SDL2::SDL2 SDL2::SDL2main SDL2_mixer::SDL2_mixer)
+# --- Game executable ---
+add_executable(Game
+    Game/src/Game/main.cpp
+    Game/src/Game/GameplayScene.cpp
+)
+target_include_directories(Game PRIVATE Game/include)
+target_link_libraries(Game PRIVATE Engine)

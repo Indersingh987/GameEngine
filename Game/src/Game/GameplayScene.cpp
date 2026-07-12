@@ -1,4 +1,4 @@
-#include "GameplayScene.h"
+#include "Game/GameplayScene.h"
 
 GameplayScene::GameplayScene(AudioManager& audioRef)
     : player(350.0f, 250.0f, 100, 100, 300.0f, 0.0f),

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Scene.h"
-#include "Entity.h"
-#include "AudioManager.h"
+#include "Engine/Scene.h"
+#include "Engine/Entity.h"
+#include "Engine/AudioManager.h"
 
 class GameplayScene : public Scene {
 public:
