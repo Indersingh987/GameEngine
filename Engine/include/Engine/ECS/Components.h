@@ -1,5 +1,9 @@
 #pragma once
+
+#include <box2d/box2d.h>
 #include <SDL2/SDL.h>
+
+constexpr float PIXELS_PER_METER = 50.0f;
 
 struct TransformComponent {
     float x = 0.0f;
@@ -8,14 +12,8 @@ struct TransformComponent {
     int height = 0;
 };
 
-struct VelocityComponent {
-    float vx = 0.0f;
-    float vy = 0.0f;
-};
-
 struct PhysicsComponent {
-    float gravity = 0.0f;
-    bool onGround = false;
+    b2BodyId bodyId = b2_nullBodyId;
 };
 
 struct SpriteComponent {

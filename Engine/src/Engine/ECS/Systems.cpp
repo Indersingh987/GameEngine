@@ -1,31 +1,22 @@
 #include "Engine/ECS/Systems.h"
-#include <algorithm>
 
 namespace Systems {
 
-void movement(Scene& scene, Entity entity, float deltaTime) {
-    if (!scene.hasComponent<TransformComponent>(entity) || !scene.hasComponent<VelocityComponent>(entity)) {
-        return;
-    }
-
-    auto& transform = scene.getComponent<TransformComponent>(entity);
-    auto& velocity = scene.getComponent<VelocityComponent>(entity);
-
-    transform.x += velocity.vx * deltaTime;
-    transform.y += velocity.vy * deltaTime;
-}
-
 void physics(Scene& scene, Entity entity, float deltaTime) {
-    if (!scene.hasComponent<PhysicsComponent>(entity) || !scene.hasComponent<VelocityComponent>(entity)) {
+    if (!scene.hasComponent<PhysicsComponent>(entity) || !scene.hasComponent<TransformComponent>(entity)) {
         return;
     }
 
     auto& phys = scene.getComponent<PhysicsComponent>(entity);
-    auto& velocity = scene.getComponent<VelocityComponent>(entity);
+    auto& transform = scene.getComponent<TransformComponent>(entity);
 
-    if (phys.gravity != 0.0f) {
-        velocity.vy += phys.gravity * deltaTime;
+    if (B2_IS_NULL(phys.bodyId)) {
+        return;
     }
+
+    b2Vec2 position = b2Body_GetPosition(phys.bodyId);
+    transform.x = (position.x * PIXELS_PER_METER) - (transform.width / 2.0f);
+    transform.y = (position.y * PIXELS_PER_METER) - (transform.height / 2.0f);
 }
 
 void render(Scene& scene, Entity entity, SDL_Renderer* renderer) {
@@ -44,32 +35,6 @@ void render(Scene& scene, Entity entity, SDL_Renderer* renderer) {
 
     SDL_SetRenderDrawColor(renderer, sprite.r, sprite.g, sprite.b, sprite.a);
     SDL_RenderFillRect(renderer, &rect);
-}
-
-bool checkCollision(Scene& scene, Entity a, Entity b) {
-    auto& tA = scene.getComponent<TransformComponent>(a);
-    auto& tB = scene.getComponent<TransformComponent>(b);
-
-    return tA.x < tB.x + tB.width &&
-           tA.x + tA.width > tB.x &&
-           tA.y < tB.y + tB.height &&
-           tA.y + tA.height > tB.y;
-}
-
-void resolveCollision(Scene& scene, Entity a, Entity b) {
-    auto& tA = scene.getComponent<TransformComponent>(a);
-    auto& tB = scene.getComponent<TransformComponent>(b);
-
-    float overlapX = std::min(tA.x + tA.width, tB.x + tB.width) - std::max(tA.x, tB.x);
-    float overlapY = std::min(tA.y + tA.height, tB.y + tB.height) - std::max(tA.y, tB.y);
-
-    if (overlapX < overlapY) {
-        if (tA.x < tB.x) tA.x -= overlapX;
-        else              tA.x += overlapX;
-    } else {
-        if (tA.y < tB.y) tA.y -= overlapY;
-        else              tA.y += overlapY;
-    }
 }
 
 }
