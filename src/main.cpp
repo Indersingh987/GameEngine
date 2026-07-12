@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 #include "Entity.h"
+#include "AudioManager.h"
 
 int main(int argc, char* argv[]) {
     // 1. Initialize SDL's video subsystem
@@ -37,6 +38,16 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
+
+    //initiale AudioManager
+    AudioManager audio;
+    if (!audio.init()) {
+        std::cerr << "Audio initialization failed!" << std::endl;
+    }
+
+    // Example loading — replace paths with actual files you have
+    bool loaded = audio.loadSound("jump", "assets/jump.ogg");
+    std::cerr << "Sound loaded: " << (loaded ? "YES" : "NO") << std::endl;
     
     // 3. The game loop
 
@@ -64,6 +75,7 @@ int main(int argc, char* argv[]) {
             }
             if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
                 player.jump();
+                audio.playSound("jump");
             }
         }
 
@@ -88,6 +100,7 @@ int main(int argc, char* argv[]) {
     }
 
     // 4. Cleanup
+    audio.shutdown();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
