@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     }
     audio.loadSound("jump", "assets/jump.ogg");
 
-    Scene* currentScene = new GameplayScene(audio);
+   GameplayScene gameplayScene(audio);
 
     bool running = true;
     SDL_Event event;
@@ -59,18 +59,16 @@ int main(int argc, char* argv[]) {
         }
 
         const Uint8* keystate = SDL_GetKeyboardState(nullptr);
-        currentScene->handleInput(keystate);
-        currentScene->update(deltaTime);
+        gameplayScene.handleInput(keystate);
+        gameplayScene.update(deltaTime);
 
         SDL_SetRenderDrawColor(renderer, 30, 30, 60, 255);
         SDL_RenderClear(renderer);
 
-        currentScene->render(renderer);
+        gameplayScene.render(renderer);
 
         SDL_RenderPresent(renderer);
     }
-
-    delete currentScene;
 
     audio.shutdown();
     SDL_DestroyRenderer(renderer);

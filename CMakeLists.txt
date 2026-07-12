@@ -9,8 +9,9 @@ find_package(SDL2_mixer CONFIG REQUIRED)
 
 # --- Engine library ---
 add_library(Engine STATIC
-    Engine/src/Engine/Entity.cpp
     Engine/src/Engine/AudioManager.cpp
+    Engine/src/Engine/ECS/Scene.cpp
+    Engine/src/Engine/ECS/Systems.cpp
 )
 target_include_directories(Engine PUBLIC Engine/include)
 target_link_libraries(Engine PUBLIC SDL2::SDL2 SDL2::SDL2main SDL2_mixer::SDL2_mixer)
