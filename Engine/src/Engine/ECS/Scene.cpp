@@ -95,13 +95,14 @@ void Scene::loadFromFile(const std::string& filepath) {
 }
 
 void Scene::clear() {
+    
 
     for (auto& pair : physics) {
         if (!B2_IS_NULL(pair.second.bodyId)) {
             b2DestroyBody(pair.second.bodyId);
         }
     }
-    
+
     transforms.clear();
     physics.clear();
     sprites.clear();
