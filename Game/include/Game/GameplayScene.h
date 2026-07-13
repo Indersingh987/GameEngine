@@ -20,5 +20,5 @@ private:
     Entity obstacle;
     AudioManager& audio;
 
-    void createPhysicsBody(Entity entity, bool isDynamic, float gravityScale);
+   void createPhysicsBody(Entity entity);
 };

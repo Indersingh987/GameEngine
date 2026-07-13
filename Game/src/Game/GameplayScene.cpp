@@ -6,12 +6,14 @@ GameplayScene::GameplayScene(AudioManager& audioRef)
     player = scene.createEntity();
     scene.addComponent<TransformComponent>(player, {350.0f, 250.0f, 100, 100});
     scene.addComponent<SpriteComponent>(player, {220, 60, 60, 255});
-    createPhysicsBody(player, true, 0.0f);
+    scene.addComponent<PhysicsComponent>(player, {b2_nullBodyId, true, 0.0f});
+    createPhysicsBody(player);
 
     obstacle = scene.createEntity();
     scene.addComponent<TransformComponent>(obstacle, {100.0f, 100.0f, 80, 80});
     scene.addComponent<SpriteComponent>(obstacle, {220, 60, 60, 255});
-    createPhysicsBody(obstacle, false, 0.0f);
+    scene.addComponent<PhysicsComponent>(obstacle, {b2_nullBodyId, false, 0.0f});
+    createPhysicsBody(obstacle);
 }
 
 void GameplayScene::handleInput(const Uint8* keystate) {
@@ -46,15 +48,16 @@ Scene& GameplayScene::getScene() {
     return scene;
 }
 
-void GameplayScene::createPhysicsBody(Entity entity, bool isDynamic, float gravityScale) {
+void GameplayScene::createPhysicsBody(Entity entity) {
     auto& transform = scene.getComponent<TransformComponent>(entity);
+    auto& phys = scene.getComponent<PhysicsComponent>(entity);
     b2WorldId world = scene.getPhysicsWorld();
 
     b2BodyDef bodyDef = b2DefaultBodyDef();
-    bodyDef.type = isDynamic ? b2_dynamicBody : b2_staticBody;
+    bodyDef.type = phys.isDynamic ? b2_dynamicBody : b2_staticBody;
     bodyDef.position.x = (transform.x + transform.width / 2.0f) / PIXELS_PER_METER;
-bodyDef.position.y = (transform.y + transform.height / 2.0f) / PIXELS_PER_METER;
-    bodyDef.gravityScale = gravityScale;
+    bodyDef.position.y = (transform.y + transform.height / 2.0f) / PIXELS_PER_METER;
+    bodyDef.gravityScale = phys.gravityScale;
 
     b2BodyId bodyId = b2CreateBody(world, &bodyDef);
 
@@ -67,10 +70,10 @@ bodyDef.position.y = (transform.y + transform.height / 2.0f) / PIXELS_PER_METER;
     shapeDef.material.friction = 0.3f;
     b2CreatePolygonShape(bodyId, &shapeDef, &box);
 
-    scene.addComponent<PhysicsComponent>(entity, {bodyId});
+    phys.bodyId = bodyId;
 }
 
 void GameplayScene::reinitializePhysics() {
-    createPhysicsBody(player, true, 0.0f);
-    createPhysicsBody(obstacle, false, 0.0f);
+    createPhysicsBody(player);
+    createPhysicsBody(obstacle);
 }

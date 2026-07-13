@@ -14,6 +14,8 @@ struct TransformComponent {
 
 struct PhysicsComponent {
     b2BodyId bodyId = b2_nullBodyId;
+    bool isDynamic = true;
+    float gravityScale = 0.0f;
 };
 
 struct SpriteComponent {

@@ -57,7 +57,13 @@ void Scene::saveToFile(const std::string& filepath) {
                 {"r", s.r}, {"g", s.g}, {"b", s.b}, {"a", s.a}
             };
         }
-
+        if (hasComponent<PhysicsComponent>(entity)) {
+            auto& p = getComponent<PhysicsComponent>(entity);
+            entityJson["PhysicsComponent"] = {
+                {"isDynamic", p.isDynamic},
+                {"gravityScale", p.gravityScale}
+            };
+        }
         json["entities"].push_back(entityJson);
     }
 
@@ -90,6 +96,12 @@ void Scene::loadFromFile(const std::string& filepath) {
             s.b = entityJson["SpriteComponent"]["b"];
             s.a = entityJson["SpriteComponent"]["a"];
             addComponent<SpriteComponent>(entity, s);
+        }
+        if (entityJson.contains("PhysicsComponent")) {
+            PhysicsComponent p;
+            p.isDynamic = entityJson["PhysicsComponent"]["isDynamic"];
+            p.gravityScale = entityJson["PhysicsComponent"]["gravityScale"];
+            addComponent<PhysicsComponent>(entity, p);
         }
     }
 }
