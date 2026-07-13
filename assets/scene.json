@@ -1,0 +1,34 @@
+{
+    "entities": [
+        {
+            "SpriteComponent": {
+                "a": 255,
+                "b": 60,
+                "g": 60,
+                "r": 220
+            },
+            "TransformComponent": {
+                "height": 100,
+                "width": 100,
+                "x": 300.0,
+                "y": 200.0
+            },
+            "id": 1
+        },
+        {
+            "SpriteComponent": {
+                "a": 255,
+                "b": 60,
+                "g": 60,
+                "r": 220
+            },
+            "TransformComponent": {
+                "height": 80,
+                "width": 80,
+                "x": 60.0,
+                "y": 60.0
+            },
+            "id": 2
+        }
+    ]
+}

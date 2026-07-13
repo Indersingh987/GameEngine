@@ -81,6 +81,16 @@ int main(int argc, char* argv[]) {
         static Entity selectedEntity = INVALID_ENTITY;
 
         ImGui::Begin("Scene Hierarchy");
+
+        if (ImGui::Button("Save Scene")) {
+            gameplayScene.getScene().saveToFile("assets/scene.json");
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Load Scene")) {
+            gameplayScene.getScene().loadFromFile("assets/scene.json");
+            gameplayScene.reinitializePhysics();
+        }
+        
         for (Entity entity : gameplayScene.getScene().getAllEntities()) {
             std::string label = "Entity " + std::to_string(entity);
             if (ImGui::Selectable(label.c_str(), selectedEntity == entity)) {

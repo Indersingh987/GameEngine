@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include <box2d/box2d.h>
+#include <string>
 
 class Scene {
 public:
@@ -16,6 +17,9 @@ public:
 
     Entity createEntity();
     void destroyEntity(Entity entity);
+    void saveToFile(const std::string& filepath);
+    void loadFromFile(const std::string& filepath);
+    void clear();
 
     template<typename T>
     void addComponent(Entity entity, T component) {

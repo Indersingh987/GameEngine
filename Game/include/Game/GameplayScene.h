@@ -12,10 +12,13 @@ public:
     void update(float deltaTime);
     void render(SDL_Renderer* renderer);
     Scene& getScene();
+    void reinitializePhysics();
 
 private:
     Scene scene;
     Entity player;
     Entity obstacle;
     AudioManager& audio;
+
+    void createPhysicsBody(Entity entity, bool isDynamic, float gravityScale);
 };

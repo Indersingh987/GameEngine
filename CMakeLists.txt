@@ -8,6 +8,7 @@ find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_mixer CONFIG REQUIRED)
 find_package(box2d CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 # --- Engine library ---
 add_library(Engine STATIC
@@ -18,7 +19,7 @@ add_library(Engine STATIC
     external/imgui_backends/imgui_impl_sdlrenderer2.cpp
 )
 target_include_directories(Engine PUBLIC Engine/include)
-target_link_libraries(Engine PUBLIC SDL2::SDL2 SDL2::SDL2main SDL2_mixer::SDL2_mixer box2d::box2d imgui::imgui)
+target_link_libraries(Engine PUBLIC SDL2::SDL2 SDL2::SDL2main SDL2_mixer::SDL2_mixer box2d::box2d imgui::imgui nlohmann_json::nlohmann_json)
 target_include_directories(Engine PUBLIC Engine/include external/imgui_backends)
 
 # --- Game executable ---

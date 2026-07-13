@@ -3,52 +3,15 @@
 GameplayScene::GameplayScene(AudioManager& audioRef)
     : audio(audioRef) {
 
-    b2WorldId world = scene.getPhysicsWorld();
-
-    // --- Player: dynamic body ---
     player = scene.createEntity();
     scene.addComponent<TransformComponent>(player, {350.0f, 250.0f, 100, 100});
     scene.addComponent<SpriteComponent>(player, {220, 60, 60, 255});
+    createPhysicsBody(player, true, 0.0f);
 
-    b2BodyDef playerBodyDef = b2DefaultBodyDef();
-    playerBodyDef.type = b2_dynamicBody;
-    playerBodyDef.position.x = 350.0f / PIXELS_PER_METER;
-    playerBodyDef.position.y = 250.0f / PIXELS_PER_METER;
-    playerBodyDef.gravityScale = 0.0f; // start with no gravity, space-style
-
-    b2BodyId playerBodyId = b2CreateBody(world, &playerBodyDef);
-
-    b2Polygon playerBox = b2MakeBox(
-        (100.0f / PIXELS_PER_METER) / 2.0f,
-        (100.0f / PIXELS_PER_METER) / 2.0f
-    );
-    b2ShapeDef playerShapeDef = b2DefaultShapeDef();
-    playerShapeDef.density = 1.0f;
-    playerShapeDef.material.friction = 0.3f;
-    b2CreatePolygonShape(playerBodyId, &playerShapeDef, &playerBox);
-
-    scene.addComponent<PhysicsComponent>(player, {playerBodyId});
-
-    // --- Obstacle: static body ---
     obstacle = scene.createEntity();
     scene.addComponent<TransformComponent>(obstacle, {100.0f, 100.0f, 80, 80});
     scene.addComponent<SpriteComponent>(obstacle, {220, 60, 60, 255});
-
-    b2BodyDef obstacleBodyDef = b2DefaultBodyDef();
-    obstacleBodyDef.type = b2_staticBody;
-    obstacleBodyDef.position.x = 100.0f / PIXELS_PER_METER;
-    obstacleBodyDef.position.y = 100.0f / PIXELS_PER_METER;
-
-    b2BodyId obstacleBodyId = b2CreateBody(world, &obstacleBodyDef);
-
-    b2Polygon obstacleBox = b2MakeBox(
-        (80.0f / PIXELS_PER_METER) / 2.0f,
-        (80.0f / PIXELS_PER_METER) / 2.0f
-    );
-    b2ShapeDef obstacleShapeDef = b2DefaultShapeDef();
-    b2CreatePolygonShape(obstacleBodyId, &obstacleShapeDef, &obstacleBox);
-
-    scene.addComponent<PhysicsComponent>(obstacle, {obstacleBodyId});
+    createPhysicsBody(obstacle, false, 0.0f);
 }
 
 void GameplayScene::handleInput(const Uint8* keystate) {
@@ -81,4 +44,33 @@ void GameplayScene::render(SDL_Renderer* renderer) {
 
 Scene& GameplayScene::getScene() {
     return scene;
+}
+
+void GameplayScene::createPhysicsBody(Entity entity, bool isDynamic, float gravityScale) {
+    auto& transform = scene.getComponent<TransformComponent>(entity);
+    b2WorldId world = scene.getPhysicsWorld();
+
+    b2BodyDef bodyDef = b2DefaultBodyDef();
+    bodyDef.type = isDynamic ? b2_dynamicBody : b2_staticBody;
+    bodyDef.position.x = (transform.x + transform.width / 2.0f) / PIXELS_PER_METER;
+bodyDef.position.y = (transform.y + transform.height / 2.0f) / PIXELS_PER_METER;
+    bodyDef.gravityScale = gravityScale;
+
+    b2BodyId bodyId = b2CreateBody(world, &bodyDef);
+
+    b2Polygon box = b2MakeBox(
+        (transform.width / PIXELS_PER_METER) / 2.0f,
+        (transform.height / PIXELS_PER_METER) / 2.0f
+    );
+    b2ShapeDef shapeDef = b2DefaultShapeDef();
+    shapeDef.density = 1.0f;
+    shapeDef.material.friction = 0.3f;
+    b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+    scene.addComponent<PhysicsComponent>(entity, {bodyId});
+}
+
+void GameplayScene::reinitializePhysics() {
+    createPhysicsBody(player, true, 0.0f);
+    createPhysicsBody(obstacle, false, 0.0f);
 }
