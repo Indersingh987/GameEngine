@@ -48,6 +48,15 @@ Scene& GameplayScene::getScene() {
     return scene;
 }
 
+Entity GameplayScene::createDefaultEntity() {
+    Entity entity = scene.createEntity();
+    scene.addComponent<TransformComponent>(entity, {200.0f, 200.0f, 50, 50});
+    scene.addComponent<SpriteComponent>(entity, {200, 200, 200, 255});
+    scene.addComponent<PhysicsComponent>(entity, {b2_nullBodyId, true, 0.0f});
+    createPhysicsBody(entity);
+    return entity;
+}
+
 void GameplayScene::createPhysicsBody(Entity entity) {
     auto& transform = scene.getComponent<TransformComponent>(entity);
     auto& phys = scene.getComponent<PhysicsComponent>(entity);

@@ -12,31 +12,31 @@
                 "r": 220
             },
             "TransformComponent": {
-                "height": 100,
-                "width": 100,
-                "x": 350.0,
-                "y": 250.0
+                "height": 96,
+                "width": 94,
+                "x": 276.9002990722656,
+                "y": 118.35200500488281
             },
             "id": 1
         },
         {
             "PhysicsComponent": {
                 "gravityScale": 0.0,
-                "isDynamic": false
+                "isDynamic": true
             },
             "SpriteComponent": {
                 "a": 255,
-                "b": 60,
-                "g": 60,
-                "r": 220
+                "b": 38,
+                "g": 148,
+                "r": 13
             },
             "TransformComponent": {
-                "height": 80,
-                "width": 80,
-                "x": 100.0,
-                "y": 100.0
+                "height": 50,
+                "width": 50,
+                "x": 120.0,
+                "y": 111.0
             },
-            "id": 2
+            "id": 3
         }
     ]
 }

@@ -26,6 +26,11 @@ const std::vector<Entity>& Scene::getAllEntities() const {
     return allEntities;
 }
 void Scene::destroyEntity(Entity entity) {
+    auto physicsIt = physics.find(entity);
+    if (physicsIt != physics.end() && !B2_IS_NULL(physicsIt->second.bodyId)) {
+        b2DestroyBody(physicsIt->second.bodyId);
+    }
+
     transforms.erase(entity);
     physics.erase(entity);
     sprites.erase(entity);

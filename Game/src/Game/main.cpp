@@ -90,7 +90,11 @@ int main(int argc, char* argv[]) {
             gameplayScene.getScene().loadFromFile("assets/scene.json");
             gameplayScene.reinitializePhysics();
         }
-        
+        ImGui::SameLine();
+        if (ImGui::Button("Create Entity")) {
+            selectedEntity = gameplayScene.createDefaultEntity();
+        }
+
         for (Entity entity : gameplayScene.getScene().getAllEntities()) {
             std::string label = "Entity " + std::to_string(entity);
             if (ImGui::Selectable(label.c_str(), selectedEntity == entity)) {
@@ -122,6 +126,11 @@ int main(int argc, char* argv[]) {
                     sprite.b = static_cast<Uint8>(color[2] * 255.0f);
                     sprite.a = static_cast<Uint8>(color[3] * 255.0f);
                 }
+            }
+
+            if (ImGui::Button("Delete Entity")) {
+                scene.destroyEntity(selectedEntity);
+                selectedEntity = INVALID_ENTITY;
             }
         } else {
             ImGui::Text("No entity selected");

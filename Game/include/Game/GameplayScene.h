@@ -13,6 +13,7 @@ public:
     void render(SDL_Renderer* renderer);
     Scene& getScene();
     void reinitializePhysics();
+    Entity createDefaultEntity();
 
 private:
     Scene scene;
