@@ -11,6 +11,7 @@ public:
     void handleInput(const Uint8* keystate);
     void update(float deltaTime);
     void render(SDL_Renderer* renderer);
+    Scene& getScene();
 
 private:
     Scene scene;

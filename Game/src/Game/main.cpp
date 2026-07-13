@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
+#include <string>
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -77,8 +78,44 @@ int main(int argc, char* argv[]) {
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::Begin("Hello Editor");
-        ImGui::Text("ImGui is working!");
+        static Entity selectedEntity = INVALID_ENTITY;
+
+        ImGui::Begin("Scene Hierarchy");
+        for (Entity entity : gameplayScene.getScene().getAllEntities()) {
+            std::string label = "Entity " + std::to_string(entity);
+            if (ImGui::Selectable(label.c_str(), selectedEntity == entity)) {
+                selectedEntity = entity;
+            }
+        }
+        ImGui::End();
+
+        ImGui::Begin("Inspector");
+        if (selectedEntity != INVALID_ENTITY) {
+            Scene& scene = gameplayScene.getScene();
+
+            if (scene.hasComponent<TransformComponent>(selectedEntity)) {
+                auto& transform = scene.getComponent<TransformComponent>(selectedEntity);
+                ImGui::Text("Transform");
+                ImGui::DragFloat("X", &transform.x, 1.0f);
+                ImGui::DragFloat("Y", &transform.y, 1.0f);
+                ImGui::DragInt("Width", &transform.width, 1);
+                ImGui::DragInt("Height", &transform.height, 1);
+            }
+
+            if (scene.hasComponent<SpriteComponent>(selectedEntity)) {
+                auto& sprite = scene.getComponent<SpriteComponent>(selectedEntity);
+                ImGui::Text("Sprite");
+                float color[4] = { sprite.r / 255.0f, sprite.g / 255.0f, sprite.b / 255.0f, sprite.a / 255.0f };
+                if (ImGui::ColorEdit4("Color", color)) {
+                    sprite.r = static_cast<Uint8>(color[0] * 255.0f);
+                    sprite.g = static_cast<Uint8>(color[1] * 255.0f);
+                    sprite.b = static_cast<Uint8>(color[2] * 255.0f);
+                    sprite.a = static_cast<Uint8>(color[3] * 255.0f);
+                }
+            }
+        } else {
+            ImGui::Text("No entity selected");
+        }
         ImGui::End();
 
         SDL_SetRenderDrawColor(renderer, 30, 30, 60, 255);

@@ -78,3 +78,7 @@ void GameplayScene::render(SDL_Renderer* renderer) {
     Systems::render(scene, player, renderer);
     Systems::render(scene, obstacle, renderer);
 }
+
+Scene& GameplayScene::getScene() {
+    return scene;
+}

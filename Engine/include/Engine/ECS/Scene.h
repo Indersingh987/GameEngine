@@ -12,6 +12,7 @@ public:
     ~Scene();
 
     b2WorldId getPhysicsWorld();
+    const std::vector<Entity>& getAllEntities() const;
 
     Entity createEntity();
     void destroyEntity(Entity entity);
@@ -42,4 +43,6 @@ private:
     std::unordered_map<Entity, TransformComponent> transforms;
     std::unordered_map<Entity, PhysicsComponent> physics;
     std::unordered_map<Entity, SpriteComponent> sprites;
+
+     std::vector<Entity> allEntities;
 };

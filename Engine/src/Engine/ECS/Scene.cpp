@@ -1,4 +1,5 @@
 #include "Engine/ECS/Scene.h"
+#include <algorithm>
 
 Scene::Scene() {
     b2WorldDef worldDef = b2DefaultWorldDef();
@@ -15,13 +16,22 @@ b2WorldId Scene::getPhysicsWorld() {
     return physicsWorldId;
 }
 Entity Scene::createEntity() {
-    return nextEntityId++;
+    Entity newEntity = nextEntityId++;
+    allEntities.push_back(newEntity);
+    return newEntity;
 }
-
+const std::vector<Entity>& Scene::getAllEntities() const {
+    return allEntities;
+}
 void Scene::destroyEntity(Entity entity) {
     transforms.erase(entity);
     physics.erase(entity);
     sprites.erase(entity);
+
+    allEntities.erase(
+        std::remove(allEntities.begin(), allEntities.end(), entity),
+        allEntities.end()
+    );
 }
 
 // Template specializations — tell the compiler which storage map corresponds to which component type
