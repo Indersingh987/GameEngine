@@ -2,6 +2,9 @@
 #include <iostream>
 #include "Engine/AudioManager.h"
 #include "Game/GameplayScene.h"
+#include "imgui.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_sdlrenderer2.h"
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -32,6 +35,13 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+
+    ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
+    ImGui_ImplSDLRenderer2_Init(renderer);
+
     AudioManager audio;
     if (!audio.init()) {
         std::cerr << "Audio initialization failed!" << std::endl;
@@ -50,6 +60,7 @@ int main(int argc, char* argv[]) {
         lastTime = currentTime;
 
         while (SDL_PollEvent(&event)) {
+            ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT) {
                 running = false;
             }
@@ -62,14 +73,28 @@ int main(int argc, char* argv[]) {
         gameplayScene.handleInput(keystate);
         gameplayScene.update(deltaTime);
 
+        ImGui_ImplSDLRenderer2_NewFrame();
+        ImGui_ImplSDL2_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::Begin("Hello Editor");
+        ImGui::Text("ImGui is working!");
+        ImGui::End();
+
         SDL_SetRenderDrawColor(renderer, 30, 30, 60, 255);
         SDL_RenderClear(renderer);
 
         gameplayScene.render(renderer);
 
+        ImGui::Render();
+        ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+
         SDL_RenderPresent(renderer);
     }
 
+    ImGui_ImplSDLRenderer2_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
     audio.shutdown();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
