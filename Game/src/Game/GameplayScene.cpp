@@ -35,13 +35,15 @@ void GameplayScene::handleInput(const Uint8* keystate) {
 void GameplayScene::update(float deltaTime) {
     b2World_Step(scene.getPhysicsWorld(), deltaTime, 4);
 
-    Systems::physics(scene, player, deltaTime);
-    Systems::physics(scene, obstacle, deltaTime);
+    for (Entity entity : scene.getAllEntities()) {
+        Systems::physics(scene, entity, deltaTime);
+    }
 }
 
 void GameplayScene::render(SDL_Renderer* renderer) {
-    Systems::render(scene, player, renderer);
-    Systems::render(scene, obstacle, renderer);
+    for (Entity entity : scene.getAllEntities()) {
+        Systems::render(scene, entity, renderer);
+    }
 }
 
 Scene& GameplayScene::getScene() {
@@ -83,6 +85,9 @@ void GameplayScene::createPhysicsBody(Entity entity) {
 }
 
 void GameplayScene::reinitializePhysics() {
-    createPhysicsBody(player);
-    createPhysicsBody(obstacle);
+    for (Entity entity : scene.getAllEntities()) {
+        if (scene.hasComponent<PhysicsComponent>(entity)) {
+            createPhysicsBody(entity);
+        }
+    }
 }

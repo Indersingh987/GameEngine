@@ -12,12 +12,31 @@
                 "r": 220
             },
             "TransformComponent": {
-                "height": 96,
-                "width": 94,
-                "x": 276.9002990722656,
-                "y": 118.35200500488281
+                "height": 100,
+                "width": 100,
+                "x": 350.0040588378906,
+                "y": 250.00079345703125
             },
             "id": 1
+        },
+        {
+            "PhysicsComponent": {
+                "gravityScale": 0.0,
+                "isDynamic": false
+            },
+            "SpriteComponent": {
+                "a": 255,
+                "b": 60,
+                "g": 60,
+                "r": 220
+            },
+            "TransformComponent": {
+                "height": 80,
+                "width": 80,
+                "x": 100.0,
+                "y": 100.0
+            },
+            "id": 2
         },
         {
             "PhysicsComponent": {
@@ -26,17 +45,150 @@
             },
             "SpriteComponent": {
                 "a": 255,
-                "b": 38,
-                "g": 148,
-                "r": 13
+                "b": 200,
+                "g": 200,
+                "r": 200
             },
             "TransformComponent": {
                 "height": 50,
                 "width": 50,
-                "x": 120.0,
-                "y": 111.0
+                "x": 169.86520385742188,
+                "y": 532.1932983398438
             },
             "id": 3
+        },
+        {
+            "PhysicsComponent": {
+                "gravityScale": 0.0,
+                "isDynamic": true
+            },
+            "SpriteComponent": {
+                "a": 255,
+                "b": 200,
+                "g": 200,
+                "r": 200
+            },
+            "TransformComponent": {
+                "height": 50,
+                "width": 50,
+                "x": 191.51470947265625,
+                "y": -135.3091278076172
+            },
+            "id": 4
+        },
+        {
+            "PhysicsComponent": {
+                "gravityScale": 0.0,
+                "isDynamic": true
+            },
+            "SpriteComponent": {
+                "a": 255,
+                "b": 9,
+                "g": 9,
+                "r": 27
+            },
+            "TransformComponent": {
+                "height": 50,
+                "width": 50,
+                "x": 259.6991882324219,
+                "y": 503.44573974609375
+            },
+            "id": 5
+        },
+        {
+            "PhysicsComponent": {
+                "gravityScale": 0.0,
+                "isDynamic": true
+            },
+            "SpriteComponent": {
+                "a": 255,
+                "b": 200,
+                "g": 200,
+                "r": 200
+            },
+            "TransformComponent": {
+                "height": 50,
+                "width": 50,
+                "x": 177.91909790039063,
+                "y": -52.87419891357422
+            },
+            "id": 6
+        },
+        {
+            "PhysicsComponent": {
+                "gravityScale": 0.0,
+                "isDynamic": true
+            },
+            "SpriteComponent": {
+                "a": 255,
+                "b": 200,
+                "g": 200,
+                "r": 200
+            },
+            "TransformComponent": {
+                "height": 50,
+                "width": 50,
+                "x": 296.4978942871094,
+                "y": 261.2955017089844
+            },
+            "id": 7
+        },
+        {
+            "PhysicsComponent": {
+                "gravityScale": 0.0,
+                "isDynamic": true
+            },
+            "SpriteComponent": {
+                "a": 255,
+                "b": 200,
+                "g": 200,
+                "r": 200
+            },
+            "TransformComponent": {
+                "height": 50,
+                "width": 50,
+                "x": 248.41876220703125,
+                "y": 138.80502319335938
+            },
+            "id": 8
+        },
+        {
+            "PhysicsComponent": {
+                "gravityScale": 0.0,
+                "isDynamic": true
+            },
+            "SpriteComponent": {
+                "a": 255,
+                "b": 200,
+                "g": 200,
+                "r": 200
+            },
+            "TransformComponent": {
+                "height": 50,
+                "width": 50,
+                "x": 39.664527893066406,
+                "y": 199.34498596191406
+            },
+            "id": 9
+        },
+        {
+            "PhysicsComponent": {
+                "gravityScale": 0.0,
+                "isDynamic": true
+            },
+            "SpriteComponent": {
+                "a": 255,
+                "b": 200,
+                "g": 200,
+                "r": 200
+            },
+            "TransformComponent": {
+                "height": 50,
+                "width": 50,
+                "x": 182.05203247070313,
+                "y": 181.04129028320313
+            },
+            "id": 10
         }
     ]
 }
