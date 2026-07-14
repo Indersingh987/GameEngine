@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 #include "Engine/AudioManager.h"
+#include "Engine/TextureManager.h"
 #include "Game/GameplayScene.h"
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
@@ -49,7 +50,10 @@ int main(int argc, char* argv[]) {
     }
     audio.loadSound("jump", "assets/jump.ogg");
 
-   GameplayScene gameplayScene(audio);
+    TextureManager textures;
+    textures.init(renderer);
+
+   GameplayScene gameplayScene(audio, textures);
 
     bool running = true;
     SDL_Event event;
@@ -87,8 +91,15 @@ int main(int argc, char* argv[]) {
         }
         ImGui::SameLine();
         if (ImGui::Button("Load Scene")) {
-            gameplayScene.getScene().loadFromFile("assets/scene.json");
-            gameplayScene.reinitializePhysics();
+            try {
+                gameplayScene.getScene().loadFromFile("assets/scene.json");
+                gameplayScene.reinitializePhysics();
+                gameplayScene.reinitializeTextures();
+                selectedEntity = INVALID_ENTITY;
+            } catch (const std::exception& e) {
+                std::cerr << "Load Scene failed: " << e.what() << std::endl;
+                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Load Scene Error", e.what(), window);
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Create Entity")) {
@@ -125,6 +136,22 @@ int main(int argc, char* argv[]) {
                     sprite.g = static_cast<Uint8>(color[1] * 255.0f);
                     sprite.b = static_cast<Uint8>(color[2] * 255.0f);
                     sprite.a = static_cast<Uint8>(color[3] * 255.0f);
+                }
+
+                static char texturePathBuffer[256] = "";
+                ImGui::InputText("Texture Path", texturePathBuffer, sizeof(texturePathBuffer));
+                ImGui::SameLine();
+                if (ImGui::Button("Load Texture")) {
+                    std::string path(texturePathBuffer);
+                    sprite.texture = textures.loadTexture(path, path);
+                    sprite.texturePath = path;
+                }
+                if (!sprite.texturePath.empty()) {
+                    ImGui::Text("Current: %s", sprite.texturePath.c_str());
+                    if (ImGui::Button("Clear Texture")) {
+                        sprite.texturePath.clear();
+                        sprite.texture = nullptr;
+                    }
                 }
             }
 

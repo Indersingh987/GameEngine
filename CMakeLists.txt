@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_mixer CONFIG REQUIRED)
+find_package(SDL2_image CONFIG REQUIRED)
 find_package(box2d CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
@@ -13,13 +14,14 @@ find_package(nlohmann_json CONFIG REQUIRED)
 # --- Engine library ---
 add_library(Engine STATIC
     Engine/src/Engine/AudioManager.cpp
+    Engine/src/Engine/TextureManager.cpp
     Engine/src/Engine/ECS/Scene.cpp
     Engine/src/Engine/ECS/Systems.cpp
     external/imgui_backends/imgui_impl_sdl2.cpp
     external/imgui_backends/imgui_impl_sdlrenderer2.cpp
 )
 target_include_directories(Engine PUBLIC Engine/include)
-target_link_libraries(Engine PUBLIC SDL2::SDL2 SDL2::SDL2main SDL2_mixer::SDL2_mixer box2d::box2d imgui::imgui nlohmann_json::nlohmann_json)
+target_link_libraries(Engine PUBLIC SDL2::SDL2 SDL2::SDL2main SDL2_mixer::SDL2_mixer $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static> box2d::box2d imgui::imgui nlohmann_json::nlohmann_json)
 target_include_directories(Engine PUBLIC Engine/include external/imgui_backends)
 
 # --- Game executable ---

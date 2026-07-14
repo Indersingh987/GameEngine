@@ -9,13 +9,14 @@
                 "a": 255,
                 "b": 60,
                 "g": 60,
-                "r": 220
+                "r": 220,
+                "texturePath": ""
             },
             "TransformComponent": {
                 "height": 100,
                 "width": 100,
-                "x": 350.0040588378906,
-                "y": 250.00079345703125
+                "x": 350.0,
+                "y": 250.0
             },
             "id": 1
         },
@@ -28,7 +29,8 @@
                 "a": 255,
                 "b": 60,
                 "g": 60,
-                "r": 220
+                "r": 220,
+                "texturePath": ""
             },
             "TransformComponent": {
                 "height": 80,
@@ -45,150 +47,18 @@
             },
             "SpriteComponent": {
                 "a": 255,
-                "b": 200,
-                "g": 200,
-                "r": 200
+                "b": 34,
+                "g": 34,
+                "r": 119,
+                "texturePath": ""
             },
             "TransformComponent": {
                 "height": 50,
                 "width": 50,
-                "x": 169.86520385742188,
-                "y": 532.1932983398438
+                "x": 200.0,
+                "y": 200.0
             },
             "id": 3
-        },
-        {
-            "PhysicsComponent": {
-                "gravityScale": 0.0,
-                "isDynamic": true
-            },
-            "SpriteComponent": {
-                "a": 255,
-                "b": 200,
-                "g": 200,
-                "r": 200
-            },
-            "TransformComponent": {
-                "height": 50,
-                "width": 50,
-                "x": 191.51470947265625,
-                "y": -135.3091278076172
-            },
-            "id": 4
-        },
-        {
-            "PhysicsComponent": {
-                "gravityScale": 0.0,
-                "isDynamic": true
-            },
-            "SpriteComponent": {
-                "a": 255,
-                "b": 9,
-                "g": 9,
-                "r": 27
-            },
-            "TransformComponent": {
-                "height": 50,
-                "width": 50,
-                "x": 259.6991882324219,
-                "y": 503.44573974609375
-            },
-            "id": 5
-        },
-        {
-            "PhysicsComponent": {
-                "gravityScale": 0.0,
-                "isDynamic": true
-            },
-            "SpriteComponent": {
-                "a": 255,
-                "b": 200,
-                "g": 200,
-                "r": 200
-            },
-            "TransformComponent": {
-                "height": 50,
-                "width": 50,
-                "x": 177.91909790039063,
-                "y": -52.87419891357422
-            },
-            "id": 6
-        },
-        {
-            "PhysicsComponent": {
-                "gravityScale": 0.0,
-                "isDynamic": true
-            },
-            "SpriteComponent": {
-                "a": 255,
-                "b": 200,
-                "g": 200,
-                "r": 200
-            },
-            "TransformComponent": {
-                "height": 50,
-                "width": 50,
-                "x": 296.4978942871094,
-                "y": 261.2955017089844
-            },
-            "id": 7
-        },
-        {
-            "PhysicsComponent": {
-                "gravityScale": 0.0,
-                "isDynamic": true
-            },
-            "SpriteComponent": {
-                "a": 255,
-                "b": 200,
-                "g": 200,
-                "r": 200
-            },
-            "TransformComponent": {
-                "height": 50,
-                "width": 50,
-                "x": 248.41876220703125,
-                "y": 138.80502319335938
-            },
-            "id": 8
-        },
-        {
-            "PhysicsComponent": {
-                "gravityScale": 0.0,
-                "isDynamic": true
-            },
-            "SpriteComponent": {
-                "a": 255,
-                "b": 200,
-                "g": 200,
-                "r": 200
-            },
-            "TransformComponent": {
-                "height": 50,
-                "width": 50,
-                "x": 39.664527893066406,
-                "y": 199.34498596191406
-            },
-            "id": 9
-        },
-        {
-            "PhysicsComponent": {
-                "gravityScale": 0.0,
-                "isDynamic": true
-            },
-            "SpriteComponent": {
-                "a": 255,
-                "b": 200,
-                "g": 200,
-                "r": 200
-            },
-            "TransformComponent": {
-                "height": 50,
-                "width": 50,
-                "x": 182.05203247070313,
-                "y": 181.04129028320313
-            },
-            "id": 10
         }
     ]
 }

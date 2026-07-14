@@ -33,8 +33,12 @@ void render(Scene& scene, Entity entity, SDL_Renderer* renderer) {
     rect.w = transform.width;
     rect.h = transform.height;
 
-    SDL_SetRenderDrawColor(renderer, sprite.r, sprite.g, sprite.b, sprite.a);
-    SDL_RenderFillRect(renderer, &rect);
+    if (sprite.texture != nullptr) {
+        SDL_RenderCopy(renderer, sprite.texture, nullptr, &rect);
+    } else {
+        SDL_SetRenderDrawColor(renderer, sprite.r, sprite.g, sprite.b, sprite.a);
+        SDL_RenderFillRect(renderer, &rect);
+    }
 }
 
 }

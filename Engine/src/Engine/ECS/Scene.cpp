@@ -59,7 +59,7 @@ void Scene::saveToFile(const std::string& filepath) {
         if (hasComponent<SpriteComponent>(entity)) {
             auto& s = getComponent<SpriteComponent>(entity);
             entityJson["SpriteComponent"] = {
-                {"r", s.r}, {"g", s.g}, {"b", s.b}, {"a", s.a}
+                {"r", s.r}, {"g", s.g}, {"b", s.b}, {"a", s.a}, {"texturePath", s.texturePath}
             };
         }
         if (hasComponent<PhysicsComponent>(entity)) {
@@ -100,6 +100,9 @@ void Scene::loadFromFile(const std::string& filepath) {
             s.g = entityJson["SpriteComponent"]["g"];
             s.b = entityJson["SpriteComponent"]["b"];
             s.a = entityJson["SpriteComponent"]["a"];
+            if (entityJson["SpriteComponent"].contains("texturePath")) {
+                s.texturePath = entityJson["SpriteComponent"]["texturePath"];
+            }
             addComponent<SpriteComponent>(entity, s);
         }
         if (entityJson.contains("PhysicsComponent")) {

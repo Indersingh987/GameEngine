@@ -2,6 +2,7 @@
 
 #include <box2d/box2d.h>
 #include <SDL2/SDL.h>
+#include <string>
 
 constexpr float PIXELS_PER_METER = 50.0f;
 
@@ -23,4 +24,7 @@ struct SpriteComponent {
     Uint8 g = 255;
     Uint8 b = 255;
     Uint8 a = 255;
+
+    std::string texturePath;       // empty = use flat color, non-empty = use this image
+    SDL_Texture* texture = nullptr; // runtime handle, not serialized - reloaded from texturePath
 };

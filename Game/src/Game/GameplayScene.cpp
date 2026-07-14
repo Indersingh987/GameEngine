@@ -1,7 +1,7 @@
 #include "Game/GameplayScene.h"
 
-GameplayScene::GameplayScene(AudioManager& audioRef)
-    : audio(audioRef) {
+GameplayScene::GameplayScene(AudioManager& audioRef, TextureManager& texturesRef)
+    : audio(audioRef), textures(texturesRef) {
 
     player = scene.createEntity();
     scene.addComponent<TransformComponent>(player, {350.0f, 250.0f, 100, 100});
@@ -88,6 +88,17 @@ void GameplayScene::reinitializePhysics() {
     for (Entity entity : scene.getAllEntities()) {
         if (scene.hasComponent<PhysicsComponent>(entity)) {
             createPhysicsBody(entity);
+        }
+    }
+}
+
+void GameplayScene::reinitializeTextures() {
+    for (Entity entity : scene.getAllEntities()) {
+        if (scene.hasComponent<SpriteComponent>(entity)) {
+            auto& sprite = scene.getComponent<SpriteComponent>(entity);
+            if (!sprite.texturePath.empty()) {
+                sprite.texture = textures.loadTexture(sprite.texturePath, sprite.texturePath);
+            }
         }
     }
 }
