@@ -4,6 +4,7 @@
 #include "Engine/ECS/Systems.h"
 #include "Engine/AudioManager.h"
 #include "Engine/TextureManager.h"
+#include <nlohmann/json.hpp>
 
 class GameplayScene {
 public:
@@ -17,10 +18,17 @@ public:
     void reinitializeTextures();
     Entity createDefaultEntity();
 
+    void play();
+    void stop();
+    bool isPlaying() const;
+
 private:
     Scene scene;
     AudioManager& audio;
     TextureManager& textures;
+
+    bool playing = false;
+    nlohmann::json playSnapshot;
 
    void createPhysicsBody(Entity entity);
 };

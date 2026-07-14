@@ -18,12 +18,15 @@
                 "x": 350.0,
                 "y": 250.0
             },
+            "TagComponent": {
+                "name": "player"
+            },
             "id": 1
         },
         {
             "PhysicsComponent": {
                 "gravityScale": 0.0,
-                "isDynamic": true
+                "isDynamic": false
             },
             "SpriteComponent": {
                 "a": 255,
@@ -39,66 +42,6 @@
                 "y": 334.3865966796875
             },
             "id": 2
-        },
-        {
-            "PhysicsComponent": {
-                "gravityScale": 0.0,
-                "isDynamic": true
-            },
-            "SpriteComponent": {
-                "a": 255,
-                "b": 200,
-                "g": 200,
-                "r": 200,
-                "texturePath": ""
-            },
-            "TransformComponent": {
-                "height": 50,
-                "width": 50,
-                "x": 215.80174255371094,
-                "y": -9.868896484375
-            },
-            "id": 3
-        },
-        {
-            "PhysicsComponent": {
-                "gravityScale": 0.0,
-                "isDynamic": true
-            },
-            "SpriteComponent": {
-                "a": 255,
-                "b": 200,
-                "g": 200,
-                "r": 200,
-                "texturePath": ""
-            },
-            "TransformComponent": {
-                "height": 50,
-                "width": 50,
-                "x": 173.2875213623047,
-                "y": 279.6811828613281
-            },
-            "id": 4
-        },
-        {
-            "PhysicsComponent": {
-                "gravityScale": 0.0,
-                "isDynamic": true
-            },
-            "SpriteComponent": {
-                "a": 255,
-                "b": 200,
-                "g": 200,
-                "r": 200,
-                "texturePath": ""
-            },
-            "TransformComponent": {
-                "height": 50,
-                "width": 50,
-                "x": 200.18472290039063,
-                "y": 195.80979919433594
-            },
-            "id": 5
         }
     ]
 }

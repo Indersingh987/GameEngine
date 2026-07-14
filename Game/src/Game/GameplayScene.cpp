@@ -27,6 +27,10 @@ GameplayScene::GameplayScene(AudioManager& audioRef, TextureManager& texturesRef
 }
 
 void GameplayScene::handleInput(const Uint8* keystate) {
+    if (!playing) {
+        return;
+    }
+
     Entity player = INVALID_ENTITY;
     for (Entity entity : scene.getAllEntities()) {
         if (scene.hasComponent<TagComponent>(entity) && scene.getComponent<TagComponent>(entity).name == "player") {
@@ -54,6 +58,10 @@ void GameplayScene::handleInput(const Uint8* keystate) {
 }
 
 void GameplayScene::update(float deltaTime) {
+    if (!playing) {
+        return;
+    }
+
     b2World_Step(scene.getPhysicsWorld(), deltaTime, 4);
 
     for (Entity entity : scene.getAllEntities()) {
@@ -122,4 +130,26 @@ void GameplayScene::reinitializeTextures() {
             }
         }
     }
+}
+
+void GameplayScene::play() {
+    if (playing) {
+        return;
+    }
+    playSnapshot = scene.captureSnapshot();
+    playing = true;
+}
+
+void GameplayScene::stop() {
+    if (!playing) {
+        return;
+    }
+    scene.restoreSnapshot(playSnapshot);
+    reinitializePhysics();
+    reinitializeTextures();
+    playing = false;
+}
+
+bool GameplayScene::isPlaying() const {
+    return playing;
 }

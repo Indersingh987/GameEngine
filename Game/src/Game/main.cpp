@@ -105,6 +105,17 @@ int main(int argc, char* argv[]) {
         if (ImGui::Button("Create Entity")) {
             selectedEntity = gameplayScene.createDefaultEntity();
         }
+        ImGui::SameLine();
+        if (!gameplayScene.isPlaying()) {
+            if (ImGui::Button("Play")) {
+                gameplayScene.play();
+            }
+        } else {
+            if (ImGui::Button("Stop")) {
+                gameplayScene.stop();
+                selectedEntity = INVALID_ENTITY;
+            }
+        }
 
         for (Entity entity : gameplayScene.getScene().getAllEntities()) {
             std::string label = "Entity " + std::to_string(entity);

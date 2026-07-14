@@ -42,7 +42,7 @@ void Scene::destroyEntity(Entity entity) {
     );
 }
 
-void Scene::saveToFile(const std::string& filepath) {
+nlohmann::json Scene::serializeToJson() {
     nlohmann::json json;
     json["entities"] = nlohmann::json::array();
 
@@ -79,16 +79,10 @@ void Scene::saveToFile(const std::string& filepath) {
         json["entities"].push_back(entityJson);
     }
 
-    std::ofstream file(filepath);
-    file << json.dump(4);
+    return json;
 }
 
-void Scene::loadFromFile(const std::string& filepath) {
-     clear();
-    std::ifstream file(filepath);
-    nlohmann::json json;
-    file >> json;
-
+void Scene::deserializeFromJson(const nlohmann::json& json) {
     for (auto& entityJson : json["entities"]) {
         Entity entity = createEntity();
 
@@ -124,6 +118,28 @@ void Scene::loadFromFile(const std::string& filepath) {
             addComponent<TagComponent>(entity, tag);
         }
     }
+}
+
+void Scene::saveToFile(const std::string& filepath) {
+    std::ofstream file(filepath);
+    file << serializeToJson().dump(4);
+}
+
+void Scene::loadFromFile(const std::string& filepath) {
+    clear();
+    std::ifstream file(filepath);
+    nlohmann::json json;
+    file >> json;
+    deserializeFromJson(json);
+}
+
+nlohmann::json Scene::captureSnapshot() {
+    return serializeToJson();
+}
+
+void Scene::restoreSnapshot(const nlohmann::json& snapshot) {
+    clear();
+    deserializeFromJson(snapshot);
 }
 
 void Scene::clear() {

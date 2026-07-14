@@ -6,6 +6,7 @@
 #include <vector>
 #include <box2d/box2d.h>
 #include <string>
+#include <nlohmann/json.hpp>
 
 class Scene {
 public:
@@ -20,6 +21,10 @@ public:
     void saveToFile(const std::string& filepath);
     void loadFromFile(const std::string& filepath);
     void clear();
+
+    // In-memory equivalents of saveToFile/loadFromFile - no disk I/O, used by Play/Stop.
+    nlohmann::json captureSnapshot();
+    void restoreSnapshot(const nlohmann::json& snapshot);
 
     template<typename T>
     void addComponent(Entity entity, T component) {
@@ -50,4 +55,7 @@ private:
     std::unordered_map<Entity, TagComponent> tags;
 
      std::vector<Entity> allEntities;
+
+    nlohmann::json serializeToJson();
+    void deserializeFromJson(const nlohmann::json& json);
 };
