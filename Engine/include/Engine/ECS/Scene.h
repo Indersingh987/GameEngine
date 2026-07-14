@@ -19,6 +19,7 @@ public:
     Entity createEntity();
     void destroyEntity(Entity entity);
     Entity findEntityByRole(const std::string& role);
+    void createPhysicsBody(Entity entity);
     void saveToFile(const std::string& filepath);
     void loadFromFile(const std::string& filepath);
     void clear();
@@ -54,6 +55,7 @@ private:
     std::unordered_map<Entity, PhysicsComponent> physics;
     std::unordered_map<Entity, SpriteComponent> sprites;
     std::unordered_map<Entity, TagComponent> tags;
+    std::unordered_map<Entity, ScriptComponent> scripts;
 
      std::vector<Entity> allEntities;
 

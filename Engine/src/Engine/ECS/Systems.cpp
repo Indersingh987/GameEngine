@@ -1,4 +1,5 @@
 #include "Engine/ECS/Systems.h"
+#include <iostream>
 
 namespace Systems {
 
@@ -17,6 +18,28 @@ void physics(Scene& scene, Entity entity, float deltaTime) {
     b2Vec2 position = b2Body_GetPosition(phys.bodyId);
     transform.x = (position.x * PIXELS_PER_METER) - (transform.width / 2.0f);
     transform.y = (position.y * PIXELS_PER_METER) - (transform.height / 2.0f);
+}
+
+void script(Scene& scene, Entity entity, float deltaTime, ScriptManager& scriptManager) {
+    if (!scene.hasComponent<ScriptComponent>(entity)) {
+        return;
+    }
+
+    auto& scriptComp = scene.getComponent<ScriptComponent>(entity);
+    if (scriptComp.scriptPath.empty()) {
+        return;
+    }
+
+    ScriptData* data = scriptManager.loadScript(scriptComp.scriptPath);
+    if (data == nullptr || !data->onUpdate.valid()) {
+        return;
+    }
+
+    sol::protected_function_result result = data->onUpdate(entity, deltaTime);
+    if (!result.valid()) {
+        sol::error err = result;
+        std::cerr << "Script error in '" << scriptComp.scriptPath << "' onUpdate: " << err.what() << std::endl;
+    }
 }
 
 void render(Scene& scene, Entity entity, SDL_Renderer* renderer) {

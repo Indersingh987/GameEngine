@@ -51,6 +51,34 @@ Entity Scene::findEntityByRole(const std::string& role) {
     return INVALID_ENTITY;
 }
 
+void Scene::createPhysicsBody(Entity entity) {
+    auto& transform = getComponent<TransformComponent>(entity);
+    auto& phys = getComponent<PhysicsComponent>(entity);
+
+    b2BodyDef bodyDef = b2DefaultBodyDef();
+    switch (phys.bodyType) {
+        case BodyType::Static:    bodyDef.type = b2_staticBody;    break;
+        case BodyType::Kinematic: bodyDef.type = b2_kinematicBody; break;
+        case BodyType::Dynamic:   bodyDef.type = b2_dynamicBody;   break;
+    }
+    bodyDef.position.x = (transform.x + transform.width / 2.0f) / PIXELS_PER_METER;
+    bodyDef.position.y = (transform.y + transform.height / 2.0f) / PIXELS_PER_METER;
+    bodyDef.gravityScale = phys.gravityScale;
+
+    b2BodyId bodyId = b2CreateBody(physicsWorldId, &bodyDef);
+
+    b2Polygon box = b2MakeBox(
+        (transform.width / PIXELS_PER_METER) / 2.0f,
+        (transform.height / PIXELS_PER_METER) / 2.0f
+    );
+    b2ShapeDef shapeDef = b2DefaultShapeDef();
+    shapeDef.density = 1.0f;
+    shapeDef.material.friction = 0.3f;
+    b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+    phys.bodyId = bodyId;
+}
+
 void Scene::destroyEntity(Entity entity) {
     auto physicsIt = physics.find(entity);
     if (physicsIt != physics.end() && !B2_IS_NULL(physicsIt->second.bodyId)) {
@@ -61,6 +89,7 @@ void Scene::destroyEntity(Entity entity) {
     physics.erase(entity);
     sprites.erase(entity);
     tags.erase(entity);
+    scripts.erase(entity);
 
     allEntities.erase(
         std::remove(allEntities.begin(), allEntities.end(), entity),
@@ -183,6 +212,7 @@ void Scene::clear() {
     physics.clear();
     sprites.clear();
     tags.clear();
+    scripts.clear();
     allEntities.clear();
     nextEntityId = 1;
 }
@@ -208,4 +238,9 @@ std::unordered_map<Entity, SpriteComponent>& Scene::getStorage<SpriteComponent>(
 template<>
 std::unordered_map<Entity, TagComponent>& Scene::getStorage<TagComponent>() {
     return tags;
+}
+
+template<>
+std::unordered_map<Entity, ScriptComponent>& Scene::getStorage<ScriptComponent>() {
+    return scripts;
 }

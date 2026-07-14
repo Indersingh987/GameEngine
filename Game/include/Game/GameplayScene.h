@@ -4,6 +4,7 @@
 #include "Engine/ECS/Systems.h"
 #include "Engine/AudioManager.h"
 #include "Engine/TextureManager.h"
+#include "Engine/ScriptManager.h"
 #include <nlohmann/json.hpp>
 
 class GameplayScene {
@@ -26,6 +27,7 @@ private:
     Scene scene;
     AudioManager& audio;
     TextureManager& textures;
+    ScriptManager scriptManager;
 
     bool playing = false;
     nlohmann::json playSnapshot;

@@ -2,7 +2,7 @@
 #include <fstream>
 
 GameplayScene::GameplayScene(AudioManager& audioRef, TextureManager& texturesRef)
-    : audio(audioRef), textures(texturesRef) {
+    : audio(audioRef), textures(texturesRef), scriptManager(scene, audio) {
 
     std::ifstream saveFile("assets/scene.json");
     if (saveFile.good()) {
@@ -62,6 +62,10 @@ void GameplayScene::update(float deltaTime) {
     for (Entity entity : scene.getAllEntities()) {
         Systems::physics(scene, entity, deltaTime);
     }
+
+    for (Entity entity : scene.getAllEntities()) {
+        Systems::script(scene, entity, deltaTime, scriptManager);
+    }
 }
 
 void GameplayScene::render(SDL_Renderer* renderer) {
@@ -103,32 +107,7 @@ Entity GameplayScene::createEntity(const std::string& displayName, BodyType body
 }
 
 void GameplayScene::createPhysicsBody(Entity entity) {
-    auto& transform = scene.getComponent<TransformComponent>(entity);
-    auto& phys = scene.getComponent<PhysicsComponent>(entity);
-    b2WorldId world = scene.getPhysicsWorld();
-
-    b2BodyDef bodyDef = b2DefaultBodyDef();
-    switch (phys.bodyType) {
-        case BodyType::Static:    bodyDef.type = b2_staticBody;    break;
-        case BodyType::Kinematic: bodyDef.type = b2_kinematicBody; break;
-        case BodyType::Dynamic:   bodyDef.type = b2_dynamicBody;   break;
-    }
-    bodyDef.position.x = (transform.x + transform.width / 2.0f) / PIXELS_PER_METER;
-    bodyDef.position.y = (transform.y + transform.height / 2.0f) / PIXELS_PER_METER;
-    bodyDef.gravityScale = phys.gravityScale;
-
-    b2BodyId bodyId = b2CreateBody(world, &bodyDef);
-
-    b2Polygon box = b2MakeBox(
-        (transform.width / PIXELS_PER_METER) / 2.0f,
-        (transform.height / PIXELS_PER_METER) / 2.0f
-    );
-    b2ShapeDef shapeDef = b2DefaultShapeDef();
-    shapeDef.density = 1.0f;
-    shapeDef.material.friction = 0.3f;
-    b2CreatePolygonShape(bodyId, &shapeDef, &box);
-
-    phys.bodyId = bodyId;
+    scene.createPhysicsBody(entity);
 }
 
 void GameplayScene::reinitializePhysics() {

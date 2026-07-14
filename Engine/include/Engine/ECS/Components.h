@@ -39,3 +39,7 @@ struct TagComponent {
     std::string displayName;  // cosmetic, shown in Scene Hierarchy (e.g. "Bird", "Pipe_Top_3")
     std::string role;         // functional (e.g. "player"), drives behavior lookups. Empty = no role.
 };
+
+struct ScriptComponent {
+    std::string scriptPath;  // e.g. "assets/scripts/flap.lua". Runtime handle added in a later step.
+};
