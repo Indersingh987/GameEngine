@@ -19,8 +19,6 @@ public:
 
 private:
     Scene scene;
-    Entity player;
-    Entity obstacle;
     AudioManager& audio;
     TextureManager& textures;
 

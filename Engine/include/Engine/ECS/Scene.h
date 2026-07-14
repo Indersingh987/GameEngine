@@ -47,6 +47,7 @@ private:
     std::unordered_map<Entity, TransformComponent> transforms;
     std::unordered_map<Entity, PhysicsComponent> physics;
     std::unordered_map<Entity, SpriteComponent> sprites;
+    std::unordered_map<Entity, TagComponent> tags;
 
      std::vector<Entity> allEntities;
 };

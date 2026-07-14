@@ -1,15 +1,25 @@
 #include "Game/GameplayScene.h"
+#include <fstream>
 
 GameplayScene::GameplayScene(AudioManager& audioRef, TextureManager& texturesRef)
     : audio(audioRef), textures(texturesRef) {
 
-    player = scene.createEntity();
+    std::ifstream saveFile("assets/scene.json");
+    if (saveFile.good()) {
+        scene.loadFromFile("assets/scene.json");
+        reinitializePhysics();
+        reinitializeTextures();
+        return;
+    }
+
+    Entity player = scene.createEntity();
     scene.addComponent<TransformComponent>(player, {350.0f, 250.0f, 100, 100});
     scene.addComponent<SpriteComponent>(player, {220, 60, 60, 255});
     scene.addComponent<PhysicsComponent>(player, {b2_nullBodyId, true, 0.0f});
+    scene.addComponent<TagComponent>(player, {"player"});
     createPhysicsBody(player);
 
-    obstacle = scene.createEntity();
+    Entity obstacle = scene.createEntity();
     scene.addComponent<TransformComponent>(obstacle, {100.0f, 100.0f, 80, 80});
     scene.addComponent<SpriteComponent>(obstacle, {220, 60, 60, 255});
     scene.addComponent<PhysicsComponent>(obstacle, {b2_nullBodyId, false, 0.0f});
@@ -17,6 +27,17 @@ GameplayScene::GameplayScene(AudioManager& audioRef, TextureManager& texturesRef
 }
 
 void GameplayScene::handleInput(const Uint8* keystate) {
+    Entity player = INVALID_ENTITY;
+    for (Entity entity : scene.getAllEntities()) {
+        if (scene.hasComponent<TagComponent>(entity) && scene.getComponent<TagComponent>(entity).name == "player") {
+            player = entity;
+            break;
+        }
+    }
+    if (player == INVALID_ENTITY) {
+        return;
+    }
+
     auto& phys = scene.getComponent<PhysicsComponent>(player);
 
     float vx = 0.0f;

@@ -28,3 +28,7 @@ struct SpriteComponent {
     std::string texturePath;       // empty = use flat color, non-empty = use this image
     SDL_Texture* texture = nullptr; // runtime handle, not serialized - reloaded from texturePath
 };
+
+struct TagComponent {
+    std::string name;
+};

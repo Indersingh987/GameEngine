@@ -34,6 +34,7 @@ void Scene::destroyEntity(Entity entity) {
     transforms.erase(entity);
     physics.erase(entity);
     sprites.erase(entity);
+    tags.erase(entity);
 
     allEntities.erase(
         std::remove(allEntities.begin(), allEntities.end(), entity),
@@ -67,6 +68,12 @@ void Scene::saveToFile(const std::string& filepath) {
             entityJson["PhysicsComponent"] = {
                 {"isDynamic", p.isDynamic},
                 {"gravityScale", p.gravityScale}
+            };
+        }
+        if (hasComponent<TagComponent>(entity)) {
+            auto& tag = getComponent<TagComponent>(entity);
+            entityJson["TagComponent"] = {
+                {"name", tag.name}
             };
         }
         json["entities"].push_back(entityJson);
@@ -111,6 +118,11 @@ void Scene::loadFromFile(const std::string& filepath) {
             p.gravityScale = entityJson["PhysicsComponent"]["gravityScale"];
             addComponent<PhysicsComponent>(entity, p);
         }
+        if (entityJson.contains("TagComponent")) {
+            TagComponent tag;
+            tag.name = entityJson["TagComponent"]["name"];
+            addComponent<TagComponent>(entity, tag);
+        }
     }
 }
 
@@ -126,6 +138,7 @@ void Scene::clear() {
     transforms.clear();
     physics.clear();
     sprites.clear();
+    tags.clear();
     allEntities.clear();
     nextEntityId = 1;
 }
@@ -146,4 +159,9 @@ std::unordered_map<Entity, PhysicsComponent>& Scene::getStorage<PhysicsComponent
 template<>
 std::unordered_map<Entity, SpriteComponent>& Scene::getStorage<SpriteComponent>() {
     return sprites;
+}
+
+template<>
+std::unordered_map<Entity, TagComponent>& Scene::getStorage<TagComponent>() {
+    return tags;
 }
