@@ -2,8 +2,8 @@
     "entities": [
         {
             "PhysicsComponent": {
-                "gravityScale": 0.0,
-                "isDynamic": true
+                "bodyType": "Dynamic",
+                "gravityScale": 0.0
             },
             "SpriteComponent": {
                 "a": 255,
@@ -12,21 +12,22 @@
                 "r": 220,
                 "texturePath": ""
             },
+            "TagComponent": {
+                "displayName": "Player",
+                "role": "player"
+            },
             "TransformComponent": {
                 "height": 100,
                 "width": 100,
-                "x": 350.0,
-                "y": 250.0
-            },
-            "TagComponent": {
-                "name": "player"
+                "x": 105.54592895507813,
+                "y": 323.8776550292969
             },
             "id": 1
         },
         {
             "PhysicsComponent": {
-                "gravityScale": 0.0,
-                "isDynamic": false
+                "bodyType": "Static",
+                "gravityScale": 0.0
             },
             "SpriteComponent": {
                 "a": 255,
@@ -35,13 +36,65 @@
                 "r": 119,
                 "texturePath": ""
             },
+            "TagComponent": {
+                "displayName": "Obstacle",
+                "role": ""
+            },
             "TransformComponent": {
                 "height": 50,
                 "width": 50,
-                "x": 210.72299194335938,
-                "y": 334.3865966796875
+                "x": 100.72299194335938,
+                "y": 249.3865966796875
             },
             "id": 2
+        },
+        {
+            "PhysicsComponent": {
+                "bodyType": "Static",
+                "gravityScale": 0.0
+            },
+            "SpriteComponent": {
+                "a": 255,
+                "b": 200,
+                "g": 200,
+                "r": 200,
+                "texturePath": ""
+            },
+            "TagComponent": {
+                "displayName": "Pipe",
+                "role": ""
+            },
+            "TransformComponent": {
+                "height": 50,
+                "width": 50,
+                "x": 322.0,
+                "y": 139.0
+            },
+            "id": 3
+        },
+        {
+            "PhysicsComponent": {
+                "bodyType": "Dynamic",
+                "gravityScale": 0.0
+            },
+            "SpriteComponent": {
+                "a": 255,
+                "b": 187,
+                "g": 92,
+                "r": 92,
+                "texturePath": ""
+            },
+            "TagComponent": {
+                "displayName": "Dynamic",
+                "role": ""
+            },
+            "TransformComponent": {
+                "height": 50,
+                "width": 50,
+                "x": 204.0,
+                "y": 231.0
+            },
+            "id": 4
         }
     ]
 }

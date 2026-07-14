@@ -15,14 +15,15 @@ GameplayScene::GameplayScene(AudioManager& audioRef, TextureManager& texturesRef
     Entity player = scene.createEntity();
     scene.addComponent<TransformComponent>(player, {350.0f, 250.0f, 100, 100});
     scene.addComponent<SpriteComponent>(player, {220, 60, 60, 255});
-    scene.addComponent<PhysicsComponent>(player, {b2_nullBodyId, true, 0.0f});
-    scene.addComponent<TagComponent>(player, {"player"});
+    scene.addComponent<PhysicsComponent>(player, {b2_nullBodyId, BodyType::Dynamic, 0.0f});
+    scene.addComponent<TagComponent>(player, {"Player", "player"});
     createPhysicsBody(player);
 
     Entity obstacle = scene.createEntity();
     scene.addComponent<TransformComponent>(obstacle, {100.0f, 100.0f, 80, 80});
     scene.addComponent<SpriteComponent>(obstacle, {220, 60, 60, 255});
-    scene.addComponent<PhysicsComponent>(obstacle, {b2_nullBodyId, false, 0.0f});
+    scene.addComponent<PhysicsComponent>(obstacle, {b2_nullBodyId, BodyType::Static, 0.0f});
+    scene.addComponent<TagComponent>(obstacle, {"Obstacle", ""});
     createPhysicsBody(obstacle);
 }
 
@@ -31,13 +32,7 @@ void GameplayScene::handleInput(const Uint8* keystate) {
         return;
     }
 
-    Entity player = INVALID_ENTITY;
-    for (Entity entity : scene.getAllEntities()) {
-        if (scene.hasComponent<TagComponent>(entity) && scene.getComponent<TagComponent>(entity).name == "player") {
-            player = entity;
-            break;
-        }
-    }
+    Entity player = scene.findEntityByRole("player");
     if (player == INVALID_ENTITY) {
         return;
     }
@@ -79,11 +74,30 @@ Scene& GameplayScene::getScene() {
     return scene;
 }
 
-Entity GameplayScene::createDefaultEntity() {
+Entity GameplayScene::createEntity(const std::string& displayName, BodyType bodyType, bool isPlayer) {
+    if (isPlayer) {
+        Entity previousPlayer = scene.findEntityByRole("player");
+        if (previousPlayer != INVALID_ENTITY) {
+            scene.getComponent<TagComponent>(previousPlayer).role = "";
+        }
+    }
+
+    // Spawn at a fixed default position (center of the 800x600 window), not the mouse cursor -
+    // the user drags it into place afterward.
+    constexpr int defaultWidth = 50;
+    constexpr int defaultHeight = 50;
+    constexpr float windowCenterX = 400.0f;
+    constexpr float windowCenterY = 300.0f;
+
     Entity entity = scene.createEntity();
-    scene.addComponent<TransformComponent>(entity, {200.0f, 200.0f, 50, 50});
+    scene.addComponent<TransformComponent>(entity, {
+        windowCenterX - defaultWidth / 2.0f,
+        windowCenterY - defaultHeight / 2.0f,
+        defaultWidth, defaultHeight
+    });
     scene.addComponent<SpriteComponent>(entity, {200, 200, 200, 255});
-    scene.addComponent<PhysicsComponent>(entity, {b2_nullBodyId, true, 0.0f});
+    scene.addComponent<PhysicsComponent>(entity, {b2_nullBodyId, bodyType, 0.0f});
+    scene.addComponent<TagComponent>(entity, {displayName, isPlayer ? "player" : ""});
     createPhysicsBody(entity);
     return entity;
 }
@@ -94,7 +108,11 @@ void GameplayScene::createPhysicsBody(Entity entity) {
     b2WorldId world = scene.getPhysicsWorld();
 
     b2BodyDef bodyDef = b2DefaultBodyDef();
-    bodyDef.type = phys.isDynamic ? b2_dynamicBody : b2_staticBody;
+    switch (phys.bodyType) {
+        case BodyType::Static:    bodyDef.type = b2_staticBody;    break;
+        case BodyType::Kinematic: bodyDef.type = b2_kinematicBody; break;
+        case BodyType::Dynamic:   bodyDef.type = b2_dynamicBody;   break;
+    }
     bodyDef.position.x = (transform.x + transform.width / 2.0f) / PIXELS_PER_METER;
     bodyDef.position.y = (transform.y + transform.height / 2.0f) / PIXELS_PER_METER;
     bodyDef.gravityScale = phys.gravityScale;

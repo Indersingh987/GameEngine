@@ -8,6 +8,12 @@
 #include "imgui_impl_sdlrenderer2.h"
 #include <string>
 
+// Screen-space -> world-space conversion. 1:1 today (no camera/zoom yet); kept as its
+// own function so a future camera/zoom transform has a single place to hook in.
+static ImVec2 screenToWorld(int screenX, int screenY) {
+    return ImVec2(static_cast<float>(screenX), static_cast<float>(screenY));
+}
+
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cerr << "SDL_Init failed: " << SDL_GetError() << std::endl;
@@ -83,8 +89,56 @@ int main(int argc, char* argv[]) {
         ImGui::NewFrame();
 
         static Entity selectedEntity = INVALID_ENTITY;
+        static Entity draggedEntity = INVALID_ENTITY;
+        static float dragOffsetX = 0.0f;
+        static float dragOffsetY = 0.0f;
+
+        // Drag-to-position: only while editing (not Play mode), and only starts a new drag
+        // when the mouse isn't over an ImGui panel - but an in-progress drag keeps updating
+        // even if the cursor strays over a panel mid-drag.
+        if (!gameplayScene.isPlaying()) {
+            int mouseScreenX, mouseScreenY;
+            Uint32 mouseButtons = SDL_GetMouseState(&mouseScreenX, &mouseScreenY);
+            bool leftMouseDown = (mouseButtons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+            ImVec2 worldPos = screenToWorld(mouseScreenX, mouseScreenY);
+            Scene& dragScene = gameplayScene.getScene();
+
+            if (leftMouseDown && draggedEntity == INVALID_ENTITY && !ImGui::GetIO().WantCaptureMouse) {
+                const auto& entities = dragScene.getAllEntities();
+                for (auto it = entities.rbegin(); it != entities.rend(); ++it) {
+                    Entity entity = *it;
+                    if (!dragScene.hasComponent<TransformComponent>(entity)) continue;
+                    auto& t = dragScene.getComponent<TransformComponent>(entity);
+                    if (worldPos.x >= t.x && worldPos.x <= t.x + t.width &&
+                        worldPos.y >= t.y && worldPos.y <= t.y + t.height) {
+                        draggedEntity = entity;
+                        selectedEntity = entity;
+                        dragOffsetX = worldPos.x - t.x;
+                        dragOffsetY = worldPos.y - t.y;
+                        break;
+                    }
+                }
+            }
+
+            if (leftMouseDown && draggedEntity != INVALID_ENTITY &&
+                dragScene.hasComponent<TransformComponent>(draggedEntity)) {
+                auto& t = dragScene.getComponent<TransformComponent>(draggedEntity);
+                t.x = worldPos.x - dragOffsetX;
+                t.y = worldPos.y - dragOffsetY;
+            }
+
+            if (!leftMouseDown) {
+                draggedEntity = INVALID_ENTITY;
+            }
+        } else {
+            draggedEntity = INVALID_ENTITY;
+        }
 
         ImGui::Begin("Scene Hierarchy");
+
+        // Save/Load/Create Entity are edit-mode-only operations - editing scene data or
+        // structure while Play is running would fight with the live simulation state.
+        ImGui::BeginDisabled(gameplayScene.isPlaying());
 
         if (ImGui::Button("Save Scene")) {
             gameplayScene.getScene().saveToFile("assets/scene.json");
@@ -102,9 +156,37 @@ int main(int argc, char* argv[]) {
             }
         }
         ImGui::SameLine();
+        static char newEntityNameBuffer[128] = "";
+        static int newEntityBodyTypeIndex = 2; // Dynamic
+        static bool newEntityIsPlayer = false;
+        const char* bodyTypeNames[] = { "Static", "Kinematic", "Dynamic" };
+
         if (ImGui::Button("Create Entity")) {
-            selectedEntity = gameplayScene.createDefaultEntity();
+            newEntityNameBuffer[0] = '\0';
+            newEntityBodyTypeIndex = 2;
+            newEntityIsPlayer = false;
+            ImGui::OpenPopup("Create Entity");
         }
+
+        if (ImGui::BeginPopupModal("Create Entity", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::InputText("Name", newEntityNameBuffer, sizeof(newEntityNameBuffer));
+            ImGui::Combo("Body Type", &newEntityBodyTypeIndex, bodyTypeNames, IM_ARRAYSIZE(bodyTypeNames));
+            ImGui::Checkbox("Is Player-Controlled", &newEntityIsPlayer);
+
+            if (ImGui::Button("Create")) {
+                std::string name = newEntityNameBuffer[0] != '\0' ? newEntityNameBuffer : "Entity";
+                BodyType bodyType = static_cast<BodyType>(newEntityBodyTypeIndex);
+                selectedEntity = gameplayScene.createEntity(name, bodyType, newEntityIsPlayer);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
+        ImGui::EndDisabled();
         ImGui::SameLine();
         if (!gameplayScene.isPlaying()) {
             if (ImGui::Button("Play")) {
@@ -118,7 +200,14 @@ int main(int argc, char* argv[]) {
         }
 
         for (Entity entity : gameplayScene.getScene().getAllEntities()) {
-            std::string label = "Entity " + std::to_string(entity);
+            Scene& hierarchyScene = gameplayScene.getScene();
+            std::string label;
+            if (hierarchyScene.hasComponent<TagComponent>(entity) &&
+                !hierarchyScene.getComponent<TagComponent>(entity).displayName.empty()) {
+                label = hierarchyScene.getComponent<TagComponent>(entity).displayName;
+            } else {
+                label = "Entity " + std::to_string(entity);
+            }
             if (ImGui::Selectable(label.c_str(), selectedEntity == entity)) {
                 selectedEntity = entity;
             }
@@ -126,6 +215,9 @@ int main(int argc, char* argv[]) {
         ImGui::End();
 
         ImGui::Begin("Inspector");
+        // Editing entity data while Play is running would fight with the live simulation -
+        // same edit-mode-only rule as Save/Load/Create Entity above.
+        ImGui::BeginDisabled(gameplayScene.isPlaying());
         if (selectedEntity != INVALID_ENTITY) {
             Scene& scene = gameplayScene.getScene();
 
@@ -173,6 +265,7 @@ int main(int argc, char* argv[]) {
         } else {
             ImGui::Text("No entity selected");
         }
+        ImGui::EndDisabled();
         ImGui::End();
 
         SDL_SetRenderDrawColor(renderer, 30, 30, 60, 255);

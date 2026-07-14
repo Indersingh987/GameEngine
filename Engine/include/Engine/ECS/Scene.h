@@ -18,6 +18,7 @@ public:
 
     Entity createEntity();
     void destroyEntity(Entity entity);
+    Entity findEntityByRole(const std::string& role);
     void saveToFile(const std::string& filepath);
     void loadFromFile(const std::string& filepath);
     void clear();

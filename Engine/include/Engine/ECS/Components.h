@@ -13,9 +13,15 @@ struct TransformComponent {
     int height = 0;
 };
 
+enum class BodyType {
+    Static,
+    Kinematic,
+    Dynamic
+};
+
 struct PhysicsComponent {
     b2BodyId bodyId = b2_nullBodyId;
-    bool isDynamic = true;
+    BodyType bodyType = BodyType::Dynamic;
     float gravityScale = 0.0f;
 };
 
@@ -30,5 +36,6 @@ struct SpriteComponent {
 };
 
 struct TagComponent {
-    std::string name;
+    std::string displayName;  // cosmetic, shown in Scene Hierarchy (e.g. "Bird", "Pipe_Top_3")
+    std::string role;         // functional (e.g. "player"), drives behavior lookups. Empty = no role.
 };

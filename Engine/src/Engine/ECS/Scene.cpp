@@ -3,6 +3,23 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
+namespace {
+std::string bodyTypeToString(BodyType type) {
+    switch (type) {
+        case BodyType::Static:    return "Static";
+        case BodyType::Kinematic: return "Kinematic";
+        case BodyType::Dynamic:   return "Dynamic";
+    }
+    return "Dynamic";
+}
+
+BodyType bodyTypeFromString(const std::string& str) {
+    if (str == "Static") return BodyType::Static;
+    if (str == "Kinematic") return BodyType::Kinematic;
+    return BodyType::Dynamic;
+}
+}
+
 Scene::Scene() {
     b2WorldDef worldDef = b2DefaultWorldDef();
     worldDef.gravity.x = 0.0f;
@@ -25,6 +42,15 @@ Entity Scene::createEntity() {
 const std::vector<Entity>& Scene::getAllEntities() const {
     return allEntities;
 }
+Entity Scene::findEntityByRole(const std::string& role) {
+    for (Entity entity : allEntities) {
+        if (hasComponent<TagComponent>(entity) && getComponent<TagComponent>(entity).role == role) {
+            return entity;
+        }
+    }
+    return INVALID_ENTITY;
+}
+
 void Scene::destroyEntity(Entity entity) {
     auto physicsIt = physics.find(entity);
     if (physicsIt != physics.end() && !B2_IS_NULL(physicsIt->second.bodyId)) {
@@ -66,14 +92,15 @@ nlohmann::json Scene::serializeToJson() {
         if (hasComponent<PhysicsComponent>(entity)) {
             auto& p = getComponent<PhysicsComponent>(entity);
             entityJson["PhysicsComponent"] = {
-                {"isDynamic", p.isDynamic},
+                {"bodyType", bodyTypeToString(p.bodyType)},
                 {"gravityScale", p.gravityScale}
             };
         }
         if (hasComponent<TagComponent>(entity)) {
             auto& tag = getComponent<TagComponent>(entity);
             entityJson["TagComponent"] = {
-                {"name", tag.name}
+                {"displayName", tag.displayName},
+                {"role", tag.role}
             };
         }
         json["entities"].push_back(entityJson);
@@ -108,13 +135,14 @@ void Scene::deserializeFromJson(const nlohmann::json& json) {
         }
         if (entityJson.contains("PhysicsComponent")) {
             PhysicsComponent p;
-            p.isDynamic = entityJson["PhysicsComponent"]["isDynamic"];
+            p.bodyType = bodyTypeFromString(entityJson["PhysicsComponent"]["bodyType"]);
             p.gravityScale = entityJson["PhysicsComponent"]["gravityScale"];
             addComponent<PhysicsComponent>(entity, p);
         }
         if (entityJson.contains("TagComponent")) {
             TagComponent tag;
-            tag.name = entityJson["TagComponent"]["name"];
+            tag.displayName = entityJson["TagComponent"]["displayName"];
+            tag.role = entityJson["TagComponent"]["role"];
             addComponent<TagComponent>(entity, tag);
         }
     }
