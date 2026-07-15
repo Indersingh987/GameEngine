@@ -18,6 +18,7 @@ add_library(Engine STATIC
     Engine/src/Engine/AudioManager.cpp
     Engine/src/Engine/TextureManager.cpp
     Engine/src/Engine/ScriptManager.cpp
+    Engine/src/Engine/TierScript.cpp
     Engine/src/Engine/ECS/Scene.cpp
     Engine/src/Engine/ECS/Systems.cpp
     external/imgui_backends/imgui_impl_sdl2.cpp

@@ -1,8 +1,19 @@
 #include "Game/GameplayScene.h"
 #include <fstream>
 
+namespace {
+constexpr const char* GAME_SCRIPT_PATH = "assets/scripts/game/main_game.lua";
+constexpr const char* SCENE_SCRIPT_PATH = "assets/scripts/scene/main_scene.lua";
+}
+
 GameplayScene::GameplayScene(AudioManager& audioRef, TextureManager& texturesRef)
     : audio(audioRef), textures(texturesRef), scriptManager(scene, audio) {
+
+    gameScript.load(GAME_SCRIPT_PATH, scriptManager);
+    sceneScript.load(SCENE_SCRIPT_PATH, scriptManager);
+    sceneScript.bindSceneCallScript(gameScript, scriptManager);
+    gameScript.bindCallScript("scene", sceneScript);
+    scriptManager.setSceneScript(&sceneScript);
 
     std::ifstream saveFile("assets/scene.json");
     if (saveFile.good()) {
@@ -164,4 +175,12 @@ void GameplayScene::stop() {
 
 bool GameplayScene::isPlaying() const {
     return playing;
+}
+
+TierScript& GameplayScene::getGameScript() {
+    return gameScript;
+}
+
+TierScript& GameplayScene::getSceneScript() {
+    return sceneScript;
 }

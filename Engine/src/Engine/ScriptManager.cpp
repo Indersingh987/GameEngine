@@ -1,4 +1,5 @@
 #include "Engine/ScriptManager.h"
+#include "Engine/TierScript.h"
 #include <box2d/box2d.h>
 #include <iostream>
 #include <tuple>
@@ -98,6 +99,56 @@ void ScriptManager::registerBindings() {
     lua.set_function("getEntityByRole", [this](const std::string& role) {
         return scene.findEntityByRole(role);
     });
+
+    // Default callScript, visible to every entity script (via globals fallback) unless a more
+    // specific tier overrides it locally - entity scripts may only ever target "scene", per the
+    // hierarchy's communication rule (see CLAUDE.md CURRENT FEATURE SPEC, Part A). Scene/Game
+    // scripts get their own tier-scoped callScript bound directly into their environment by
+    // TierScript::bindCallScript, which shadows this one.
+    lua.set_function("callScript", [this](const std::string& targetTier, const std::string& functionName, sol::variadic_args args) -> sol::object {
+        if (targetTier != "scene") {
+            std::cerr << "callScript: entity scripts may only target \"scene\" (got \"" << targetTier << "\")" << std::endl;
+            return sol::lua_nil;
+        }
+        if (sceneScript == nullptr) {
+            std::cerr << "callScript: no scene script is loaded" << std::endl;
+            return sol::lua_nil;
+        }
+        return sceneScript->call(functionName, args);
+    });
+}
+
+void ScriptManager::setSceneScript(TierScript* sceneScriptPtr) {
+    sceneScript = sceneScriptPtr;
+}
+
+sol::object ScriptManager::callEntityFunction(Entity entity, const std::string& functionName, const std::vector<sol::object>& args) {
+    if (!scene.hasComponent<ScriptComponent>(entity)) {
+        std::cerr << "callScript: entity " << entity << " has no ScriptComponent" << std::endl;
+        return sol::lua_nil;
+    }
+
+    auto& scriptComp = scene.getComponent<ScriptComponent>(entity);
+    if (scriptComp.scriptPath.empty()) {
+        std::cerr << "callScript: entity " << entity << " has an empty scriptPath" << std::endl;
+        return sol::lua_nil;
+    }
+
+    ScriptData* data = loadScript(scriptComp.scriptPath);
+    if (data == nullptr) {
+        return sol::lua_nil;
+    }
+
+    // Entity-tier functions (onUpdate, onCollision, and any callScript-exposed function alike)
+    // always take the acting entity as their own first argument, since one script file is
+    // shared across many entities - re-prepend it here rather than assuming the caller already
+    // included it among args.
+    std::vector<sol::object> fullArgs;
+    fullArgs.reserve(args.size() + 1);
+    fullArgs.push_back(sol::make_object(lua, entity));
+    fullArgs.insert(fullArgs.end(), args.begin(), args.end());
+
+    return invokeScriptFunction(*data, functionName, sol::as_args(fullArgs));
 }
 
 ScriptData* ScriptManager::loadScript(const std::string& scriptPath) {
