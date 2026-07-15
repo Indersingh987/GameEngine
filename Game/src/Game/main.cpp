@@ -125,6 +125,10 @@ int main(int argc, char* argv[]) {
         // OpenPopup at the same (top) scope as BeginPopupModal keeps both hashes identical.
         static bool requestCreateEntityPopup = false;
 
+        static bool showSceneHierarchy = true;
+        static bool showInspector = true;
+        static bool showScriptBrowser = true;
+
         if (ImGui::BeginMainMenuBar()) {
             // Scene-editing operations are edit-mode-only - editing scene data or structure
             // while Play is running would fight with the live simulation state.
@@ -153,6 +157,14 @@ int main(int argc, char* argv[]) {
                 ImGui::EndMenu();
             }
             ImGui::EndDisabled();
+
+            // Panel visibility isn't scene data - stays togglable during Play too.
+            if (ImGui::BeginMenu("Window")) {
+                ImGui::MenuItem("Scene Hierarchy", nullptr, &showSceneHierarchy);
+                ImGui::MenuItem("Inspector", nullptr, &showInspector);
+                ImGui::MenuItem("Script Browser", nullptr, &showScriptBrowser);
+                ImGui::EndMenu();
+            }
 
             // Play/Stop stays enabled regardless of Play state - it IS the toggle. Right-aligned,
             // sized to fit whichever label is currently showing.
@@ -285,91 +297,97 @@ int main(int argc, char* argv[]) {
             draggedEntity = INVALID_ENTITY;
         }
 
-        ImGui::Begin("Scene Hierarchy");
+        if (showSceneHierarchy) {
+            ImGui::Begin("Scene Hierarchy", &showSceneHierarchy);
 
-        for (Entity entity : gameplayScene.getScene().getAllEntities()) {
-            Scene& hierarchyScene = gameplayScene.getScene();
-            std::string label;
-            if (hierarchyScene.hasComponent<TagComponent>(entity) &&
-                !hierarchyScene.getComponent<TagComponent>(entity).displayName.empty()) {
-                label = hierarchyScene.getComponent<TagComponent>(entity).displayName;
-            } else {
-                label = "Entity " + std::to_string(entity);
+            for (Entity entity : gameplayScene.getScene().getAllEntities()) {
+                Scene& hierarchyScene = gameplayScene.getScene();
+                std::string label;
+                if (hierarchyScene.hasComponent<TagComponent>(entity) &&
+                    !hierarchyScene.getComponent<TagComponent>(entity).displayName.empty()) {
+                    label = hierarchyScene.getComponent<TagComponent>(entity).displayName;
+                } else {
+                    label = "Entity " + std::to_string(entity);
+                }
+                if (ImGui::Selectable(label.c_str(), selectedEntity == entity)) {
+                    selectedEntity = entity;
+                }
             }
-            if (ImGui::Selectable(label.c_str(), selectedEntity == entity)) {
-                selectedEntity = entity;
-            }
+            ImGui::End();
         }
-        ImGui::End();
 
-        ImGui::Begin("Inspector");
-        // Editing entity data while Play is running would fight with the live simulation -
-        // same edit-mode-only rule as Save/Load/Create Entity above.
-        ImGui::BeginDisabled(gameplayScene.isPlaying());
-        if (selectedEntity != INVALID_ENTITY) {
-            Scene& scene = gameplayScene.getScene();
+        if (showInspector) {
+            ImGui::Begin("Inspector", &showInspector);
+            // Editing entity data while Play is running would fight with the live simulation -
+            // same edit-mode-only rule as Save/Load/Create Entity above.
+            ImGui::BeginDisabled(gameplayScene.isPlaying());
+            if (selectedEntity != INVALID_ENTITY) {
+                Scene& scene = gameplayScene.getScene();
 
-            if (scene.hasComponent<TransformComponent>(selectedEntity)) {
-                auto& transform = scene.getComponent<TransformComponent>(selectedEntity);
-                ImGui::Text("Transform");
-                ImGui::DragFloat("X", &transform.x, 1.0f);
-                ImGui::DragFloat("Y", &transform.y, 1.0f);
-                ImGui::DragInt("Width", &transform.width, 1);
-                ImGui::DragInt("Height", &transform.height, 1);
-            }
-
-            if (scene.hasComponent<SpriteComponent>(selectedEntity)) {
-                auto& sprite = scene.getComponent<SpriteComponent>(selectedEntity);
-                ImGui::Text("Sprite");
-                float color[4] = { sprite.r / 255.0f, sprite.g / 255.0f, sprite.b / 255.0f, sprite.a / 255.0f };
-                if (ImGui::ColorEdit4("Color", color)) {
-                    sprite.r = static_cast<Uint8>(color[0] * 255.0f);
-                    sprite.g = static_cast<Uint8>(color[1] * 255.0f);
-                    sprite.b = static_cast<Uint8>(color[2] * 255.0f);
-                    sprite.a = static_cast<Uint8>(color[3] * 255.0f);
+                if (scene.hasComponent<TransformComponent>(selectedEntity)) {
+                    auto& transform = scene.getComponent<TransformComponent>(selectedEntity);
+                    ImGui::Text("Transform");
+                    ImGui::DragFloat("X", &transform.x, 1.0f);
+                    ImGui::DragFloat("Y", &transform.y, 1.0f);
+                    ImGui::DragInt("Width", &transform.width, 1);
+                    ImGui::DragInt("Height", &transform.height, 1);
                 }
 
-                static char texturePathBuffer[256] = "";
-                ImGui::InputText("Texture Path", texturePathBuffer, sizeof(texturePathBuffer));
-                ImGui::SameLine();
-                if (ImGui::Button("Load Texture")) {
-                    std::string path(texturePathBuffer);
-                    sprite.texture = textures.loadTexture(path, path);
-                    sprite.texturePath = path;
-                }
-                if (!sprite.texturePath.empty()) {
-                    ImGui::Text("Current: %s", sprite.texturePath.c_str());
-                    if (ImGui::Button("Clear Texture")) {
-                        sprite.texturePath.clear();
-                        sprite.texture = nullptr;
+                if (scene.hasComponent<SpriteComponent>(selectedEntity)) {
+                    auto& sprite = scene.getComponent<SpriteComponent>(selectedEntity);
+                    ImGui::Text("Sprite");
+                    float color[4] = { sprite.r / 255.0f, sprite.g / 255.0f, sprite.b / 255.0f, sprite.a / 255.0f };
+                    if (ImGui::ColorEdit4("Color", color)) {
+                        sprite.r = static_cast<Uint8>(color[0] * 255.0f);
+                        sprite.g = static_cast<Uint8>(color[1] * 255.0f);
+                        sprite.b = static_cast<Uint8>(color[2] * 255.0f);
+                        sprite.a = static_cast<Uint8>(color[3] * 255.0f);
+                    }
+
+                    static char texturePathBuffer[256] = "";
+                    ImGui::InputText("Texture Path", texturePathBuffer, sizeof(texturePathBuffer));
+                    ImGui::SameLine();
+                    if (ImGui::Button("Load Texture")) {
+                        std::string path(texturePathBuffer);
+                        sprite.texture = textures.loadTexture(path, path);
+                        sprite.texturePath = path;
+                    }
+                    if (!sprite.texturePath.empty()) {
+                        ImGui::Text("Current: %s", sprite.texturePath.c_str());
+                        if (ImGui::Button("Clear Texture")) {
+                            sprite.texturePath.clear();
+                            sprite.texture = nullptr;
+                        }
                     }
                 }
-            }
 
-            if (ImGui::Button("Delete Entity")) {
-                scene.destroyEntity(selectedEntity);
-                selectedEntity = INVALID_ENTITY;
+                if (ImGui::Button("Delete Entity")) {
+                    scene.destroyEntity(selectedEntity);
+                    selectedEntity = INVALID_ENTITY;
+                }
+            } else {
+                ImGui::Text("No entity selected");
             }
-        } else {
-            ImGui::Text("No entity selected");
+            ImGui::EndDisabled();
+            ImGui::End();
         }
-        ImGui::EndDisabled();
-        ImGui::End();
 
         static std::vector<std::string> luaScripts = scanLuaScripts();
-        ImGui::Begin("Script Browser");
-        if (ImGui::Button("Refresh")) {
-            luaScripts = scanLuaScripts();
-        }
-        ImGui::SameLine();
-        ImGui::TextDisabled("Click a path to copy it");
-        ImGui::Separator();
-        for (const std::string& path : luaScripts) {
-            if (ImGui::Selectable(path.c_str())) {
-                ImGui::SetClipboardText(path.c_str());
+        if (showScriptBrowser) {
+            ImGui::Begin("Script Browser", &showScriptBrowser);
+            if (ImGui::Button("Refresh")) {
+                luaScripts = scanLuaScripts();
             }
+            ImGui::SameLine();
+            ImGui::TextDisabled("Click a path to copy it");
+            ImGui::Separator();
+            for (const std::string& path : luaScripts) {
+                if (ImGui::Selectable(path.c_str())) {
+                    ImGui::SetClipboardText(path.c_str());
+                }
+            }
+            ImGui::End();
         }
-        ImGui::End();
 
         SDL_SetRenderDrawColor(renderer, 30, 30, 60, 255);
         SDL_RenderClear(renderer);
