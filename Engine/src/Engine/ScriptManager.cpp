@@ -69,6 +69,35 @@ void ScriptManager::registerBindings() {
     lua.set_function("playSound", [this](const std::string& name) {
         audio.playSound(name);
     });
+
+    lua.set_function("setColor", [this](Entity entity, int r, int g, int b, int a) {
+        if (!scene.hasComponent<SpriteComponent>(entity)) {
+            scene.addComponent<SpriteComponent>(entity, SpriteComponent{});
+        }
+        auto& sprite = scene.getComponent<SpriteComponent>(entity);
+        sprite.r = static_cast<Uint8>(r);
+        sprite.g = static_cast<Uint8>(g);
+        sprite.b = static_cast<Uint8>(b);
+        sprite.a = static_cast<Uint8>(a);
+    });
+
+    // keyName follows SDL_GetScancodeFromName's naming (e.g. "Space", "A", "Left"), same
+    // SDL_GetKeyboardState array handleInput() reads from - just called fresh here since
+    // scripts don't have a per-frame keystate pointer threaded in.
+    lua.set_function("isKeyPressed", [](const std::string& keyName) {
+        SDL_Scancode scancode = SDL_GetScancodeFromName(keyName.c_str());
+        if (scancode == SDL_SCANCODE_UNKNOWN) {
+            return false;
+        }
+        const Uint8* keystate = SDL_GetKeyboardState(nullptr);
+        return keystate[scancode] != 0;
+    });
+
+    // Thin wrapper over Scene::findEntityByRole (already used internally for player lookup).
+    // Returns INVALID_ENTITY (0) if no entity currently holds that role.
+    lua.set_function("getEntityByRole", [this](const std::string& role) {
+        return scene.findEntityByRole(role);
+    });
 }
 
 ScriptData* ScriptManager::loadScript(const std::string& scriptPath) {

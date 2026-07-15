@@ -132,6 +132,12 @@ nlohmann::json Scene::serializeToJson() {
                 {"role", tag.role}
             };
         }
+        if (hasComponent<ScriptComponent>(entity)) {
+            auto& script = getComponent<ScriptComponent>(entity);
+            entityJson["ScriptComponent"] = {
+                {"scriptPath", script.scriptPath}
+            };
+        }
         json["entities"].push_back(entityJson);
     }
 
@@ -173,6 +179,11 @@ void Scene::deserializeFromJson(const nlohmann::json& json) {
             tag.displayName = entityJson["TagComponent"]["displayName"];
             tag.role = entityJson["TagComponent"]["role"];
             addComponent<TagComponent>(entity, tag);
+        }
+        if (entityJson.contains("ScriptComponent")) {
+            ScriptComponent script;
+            script.scriptPath = entityJson["ScriptComponent"]["scriptPath"];
+            addComponent<ScriptComponent>(entity, script);
         }
     }
 }

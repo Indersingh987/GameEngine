@@ -17,7 +17,8 @@ public:
     Scene& getScene();
     void reinitializePhysics();
     void reinitializeTextures();
-    Entity createEntity(const std::string& displayName, BodyType bodyType, bool isPlayer);
+    Entity createEntity(const std::string& displayName, BodyType bodyType, bool isPlayer,
+                         const std::string& scriptPath = "");
 
     void play();
     void stop();

@@ -159,12 +159,14 @@ int main(int argc, char* argv[]) {
         static char newEntityNameBuffer[128] = "";
         static int newEntityBodyTypeIndex = 2; // Dynamic
         static bool newEntityIsPlayer = false;
+        static char newEntityScriptPathBuffer[256] = "";
         const char* bodyTypeNames[] = { "Static", "Kinematic", "Dynamic" };
 
         if (ImGui::Button("Create Entity")) {
             newEntityNameBuffer[0] = '\0';
             newEntityBodyTypeIndex = 2;
             newEntityIsPlayer = false;
+            newEntityScriptPathBuffer[0] = '\0';
             ImGui::OpenPopup("Create Entity");
         }
 
@@ -172,11 +174,13 @@ int main(int argc, char* argv[]) {
             ImGui::InputText("Name", newEntityNameBuffer, sizeof(newEntityNameBuffer));
             ImGui::Combo("Body Type", &newEntityBodyTypeIndex, bodyTypeNames, IM_ARRAYSIZE(bodyTypeNames));
             ImGui::Checkbox("Is Player-Controlled", &newEntityIsPlayer);
+            ImGui::InputText("Script Path", newEntityScriptPathBuffer, sizeof(newEntityScriptPathBuffer));
 
             if (ImGui::Button("Create")) {
                 std::string name = newEntityNameBuffer[0] != '\0' ? newEntityNameBuffer : "Entity";
                 BodyType bodyType = static_cast<BodyType>(newEntityBodyTypeIndex);
-                selectedEntity = gameplayScene.createEntity(name, bodyType, newEntityIsPlayer);
+                std::string scriptPath = newEntityScriptPathBuffer;
+                selectedEntity = gameplayScene.createEntity(name, bodyType, newEntityIsPlayer, scriptPath);
                 ImGui::CloseCurrentPopup();
             }
             ImGui::SameLine();

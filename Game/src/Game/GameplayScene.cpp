@@ -37,6 +37,12 @@ void GameplayScene::handleInput(const Uint8* keystate) {
         return;
     }
 
+    // A scripted player owns its own velocity via onUpdate (e.g. flap.lua) - this legacy
+    // WASD/arrow control predates scripting and would otherwise fight it for the same body.
+    if (scene.hasComponent<ScriptComponent>(player)) {
+        return;
+    }
+
     auto& phys = scene.getComponent<PhysicsComponent>(player);
 
     float vx = 0.0f;
@@ -63,7 +69,12 @@ void GameplayScene::update(float deltaTime) {
         Systems::physics(scene, entity, deltaTime);
     }
 
-    for (Entity entity : scene.getAllEntities()) {
+    // Snapshot the entity list before running scripts - onUpdate is allowed to call
+    // spawnEntity/destroyEntity, which mutate Scene's underlying vector. Iterating the
+    // live reference (as the physics loop above does safely, since it never mutates)
+    // would invalidate this loop mid-iteration.
+    std::vector<Entity> entitiesForScripts = scene.getAllEntities();
+    for (Entity entity : entitiesForScripts) {
         Systems::script(scene, entity, deltaTime, scriptManager);
     }
 }
@@ -78,7 +89,8 @@ Scene& GameplayScene::getScene() {
     return scene;
 }
 
-Entity GameplayScene::createEntity(const std::string& displayName, BodyType bodyType, bool isPlayer) {
+Entity GameplayScene::createEntity(const std::string& displayName, BodyType bodyType, bool isPlayer,
+                                    const std::string& scriptPath) {
     if (isPlayer) {
         Entity previousPlayer = scene.findEntityByRole("player");
         if (previousPlayer != INVALID_ENTITY) {
@@ -102,6 +114,9 @@ Entity GameplayScene::createEntity(const std::string& displayName, BodyType body
     scene.addComponent<SpriteComponent>(entity, {200, 200, 200, 255});
     scene.addComponent<PhysicsComponent>(entity, {b2_nullBodyId, bodyType, 0.0f});
     scene.addComponent<TagComponent>(entity, {displayName, isPlayer ? "player" : ""});
+    if (!scriptPath.empty()) {
+        scene.addComponent<ScriptComponent>(entity, {scriptPath});
+    }
     createPhysicsBody(entity);
     return entity;
 }
