@@ -89,6 +89,19 @@ int main(int argc, char* argv[]) {
     SDL_Event event;
     Uint64 lastTime = SDL_GetTicks64();
 
+    // Playground: a genuinely separate OS window + renderer for Play-mode testing, created on
+    // Play and torn down on Stop - not a docked panel, not render-to-texture, not ImGui's
+    // multi-viewport mode (all explicitly rejected per the editor layout spec). The main
+    // window's own passthrough viewport keeps showing the edit-mode scene throughout; Play mode
+    // does not change what the main window renders, it only adds this second live view.
+    SDL_Window* playgroundWindow = nullptr;
+    SDL_Renderer* playgroundRenderer = nullptr;
+
+    // Declared before the event loop (rather than alongside the other UI statics further down)
+    // since the playground-window-close handler below needs to reset it too. No longer `static`
+    // since it's declared once outside the loop now, not re-entered inside it.
+    Entity selectedEntity = INVALID_ENTITY;
+
     while (running) {
         Uint64 currentTime = SDL_GetTicks64();
         float deltaTime = (currentTime - lastTime) / 1000.0f;
@@ -98,6 +111,20 @@ int main(int argc, char* argv[]) {
             ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT) {
                 running = false;
+            }
+            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE) {
+                if (playgroundWindow != nullptr && event.window.windowID == SDL_GetWindowID(playgroundWindow)) {
+                    // Closing just the playground window stops Play (and tears the window down
+                    // with it) rather than quitting the whole editor.
+                    gameplayScene.stop();
+                    selectedEntity = INVALID_ENTITY;
+                    SDL_DestroyRenderer(playgroundRenderer);
+                    SDL_DestroyWindow(playgroundWindow);
+                    playgroundRenderer = nullptr;
+                    playgroundWindow = nullptr;
+                } else if (event.window.windowID == SDL_GetWindowID(window)) {
+                    running = false;
+                }
             }
             if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
                 audio.playSound("jump");
@@ -112,7 +139,6 @@ int main(int argc, char* argv[]) {
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        static Entity selectedEntity = INVALID_ENTITY;
         static char newEntityNameBuffer[128] = "";
         static int newEntityBodyTypeIndex = 2; // Dynamic
         static bool newEntityIsPlayer = false;
@@ -190,11 +216,34 @@ int main(int argc, char* argv[]) {
             if (!gameplayScene.isPlaying()) {
                 if (ImGui::Button("Play")) {
                     gameplayScene.play();
+                    playgroundWindow = SDL_CreateWindow(
+                        "Playground", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                        800, 600, SDL_WINDOW_SHOWN
+                    );
+                    if (playgroundWindow != nullptr) {
+                        playgroundRenderer = SDL_CreateRenderer(playgroundWindow, -1, SDL_RENDERER_ACCELERATED);
+                    }
+                    if (playgroundWindow == nullptr || playgroundRenderer == nullptr) {
+                        std::cerr << "Failed to create playground window: " << SDL_GetError() << std::endl;
+                        if (playgroundWindow != nullptr) {
+                            SDL_DestroyWindow(playgroundWindow);
+                            playgroundWindow = nullptr;
+                        }
+                        gameplayScene.stop();
+                    }
                 }
             } else {
                 if (ImGui::Button("Stop")) {
                     gameplayScene.stop();
                     selectedEntity = INVALID_ENTITY;
+                    if (playgroundRenderer != nullptr) {
+                        SDL_DestroyRenderer(playgroundRenderer);
+                        playgroundRenderer = nullptr;
+                    }
+                    if (playgroundWindow != nullptr) {
+                        SDL_DestroyWindow(playgroundWindow);
+                        playgroundWindow = nullptr;
+                    }
                 }
             }
 
@@ -474,6 +523,25 @@ int main(int argc, char* argv[]) {
         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 
         SDL_RenderPresent(renderer);
+
+        // Sprites with a loaded texture won't render correctly here yet - SDL_Texture is tied
+        // to the renderer that created it (TextureManager only ever creates against the main
+        // `renderer`), and this is a different renderer/device. Not an issue for the current
+        // flat-color-only test scene; giving TextureManager a way to load per-renderer is
+        // deferred until a scene actually needs a textured sprite visible in Play mode.
+        if (playgroundRenderer != nullptr) {
+            SDL_SetRenderDrawColor(playgroundRenderer, 30, 30, 60, 255);
+            SDL_RenderClear(playgroundRenderer);
+            gameplayScene.render(playgroundRenderer);
+            SDL_RenderPresent(playgroundRenderer);
+        }
+    }
+
+    if (playgroundRenderer != nullptr) {
+        SDL_DestroyRenderer(playgroundRenderer);
+    }
+    if (playgroundWindow != nullptr) {
+        SDL_DestroyWindow(playgroundWindow);
     }
 
     ImGui_ImplSDLRenderer2_Shutdown();
