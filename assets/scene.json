@@ -23,6 +23,33 @@
                 "y": 275.0
             },
             "id": 1
+        },
+        {
+            "PhysicsComponent": {
+                "bodyType": "Dynamic",
+                "gravityScale": 0.0
+            },
+            "ScriptComponent": {
+                "scriptPath": "assets/scripts/game/main_game.lua"
+            },
+            "SpriteComponent": {
+                "a": 255,
+                "b": 200,
+                "g": 200,
+                "r": 200,
+                "texturePath": ""
+            },
+            "TagComponent": {
+                "displayName": "Test",
+                "role": ""
+            },
+            "TransformComponent": {
+                "height": 50,
+                "width": 50,
+                "x": 167.0,
+                "y": 167.0
+            },
+            "id": 2
         }
     ]
 }

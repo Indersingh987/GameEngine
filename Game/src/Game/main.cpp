@@ -8,11 +8,32 @@
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
 #include <string>
+#include <filesystem>
+#include <vector>
+#include <algorithm>
 
 // Screen-space -> world-space conversion. 1:1 today (no camera/zoom yet); kept as its
 // own function so a future camera/zoom transform has a single place to hook in.
 static ImVec2 screenToWorld(int screenX, int screenY) {
     return ImVec2(static_cast<float>(screenX), static_cast<float>(screenY));
+}
+
+// Recursively finds every .lua file under assets/scripts/ (entity scripts at the root, Game/
+// Scene scripts under game/ and scene/) for the Script Browser panel. Rescanned on demand via
+// its Refresh button, not every frame - the script set only changes when a file is added.
+static std::vector<std::string> scanLuaScripts() {
+    std::vector<std::string> paths;
+    const std::filesystem::path root = "assets/scripts";
+    if (!std::filesystem::exists(root)) {
+        return paths;
+    }
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(root)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".lua") {
+            paths.push_back(entry.path().generic_string());
+        }
+    }
+    std::sort(paths.begin(), paths.end());
+    return paths;
 }
 
 int main(int argc, char* argv[]) {
@@ -191,17 +212,29 @@ int main(int argc, char* argv[]) {
         // DockBuilderGetNode returns non-null once this dockspace has EITHER been built below OR
         // restored from a saved imgui.ini - so this default layout only ever applies on a truly
         // fresh ini (or first run), never overwriting a user's own saved arrangement.
+        //
+        // dockspaceId itself is never reassigned below - per imgui_internal.h's own comment on
+        // DockBuilderSplitNode, "the initial node becomes a parent node", so it stays valid as
+        // the whole-area root throughout, no matter how many descendants get split off it. Every
+        // split writes its two new child ids into their own dedicated variables instead.
         if (ImGui::DockBuilderGetNode(dockspaceId) == nullptr) {
             ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace | ImGuiDockNodeFlags_PassthruCentralNode);
             ImGui::DockBuilderSetNodeSize(dockspaceId, ImGui::GetMainViewport()->WorkSize);
 
-            ImGuiID rightId = 0;
-            ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Right, 0.28f, &rightId, nullptr);
-            ImGuiID rightBottomId = 0;
-            ImGui::DockBuilderSplitNode(rightId, ImGuiDir_Down, 0.5f, &rightBottomId, &rightId);
+            ImGuiID bottomId = 0;
+            ImGuiID topId = 0;
+            ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Down, 0.22f, &bottomId, &topId);
 
-            ImGui::DockBuilderDockWindow("Scene Hierarchy", rightId);
+            ImGuiID rightId = 0;
+            ImGui::DockBuilderSplitNode(topId, ImGuiDir_Right, 0.28f, &rightId, nullptr);
+
+            ImGuiID rightBottomId = 0;
+            ImGuiID rightTopId = 0;
+            ImGui::DockBuilderSplitNode(rightId, ImGuiDir_Down, 0.5f, &rightBottomId, &rightTopId);
+
+            ImGui::DockBuilderDockWindow("Scene Hierarchy", rightTopId);
             ImGui::DockBuilderDockWindow("Inspector", rightBottomId);
+            ImGui::DockBuilderDockWindow("Script Browser", bottomId);
             ImGui::DockBuilderFinish(dockspaceId);
         }
 
@@ -321,6 +354,21 @@ int main(int argc, char* argv[]) {
             ImGui::Text("No entity selected");
         }
         ImGui::EndDisabled();
+        ImGui::End();
+
+        static std::vector<std::string> luaScripts = scanLuaScripts();
+        ImGui::Begin("Script Browser");
+        if (ImGui::Button("Refresh")) {
+            luaScripts = scanLuaScripts();
+        }
+        ImGui::SameLine();
+        ImGui::TextDisabled("Click a path to copy it");
+        ImGui::Separator();
+        for (const std::string& path : luaScripts) {
+            if (ImGui::Selectable(path.c_str())) {
+                ImGui::SetClipboardText(path.c_str());
+            }
+        }
         ImGui::End();
 
         SDL_SetRenderDrawColor(renderer, 30, 30, 60, 255);
