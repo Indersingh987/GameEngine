@@ -11,6 +11,8 @@ GameplayScene::GameplayScene(AudioManager& audioRef, TextureManager& texturesRef
 
     gameScript.load(GAME_SCRIPT_PATH, scriptManager);
     sceneScript.load(SCENE_SCRIPT_PATH, scriptManager);
+    gameScriptPath = GAME_SCRIPT_PATH;
+    sceneScriptPath = SCENE_SCRIPT_PATH;
     sceneScript.bindSceneCallScript(gameScript, scriptManager);
     gameScript.bindCallScript("scene", sceneScript);
     scriptManager.setSceneScript(&sceneScript);
@@ -183,4 +185,39 @@ TierScript& GameplayScene::getGameScript() {
 
 TierScript& GameplayScene::getSceneScript() {
     return sceneScript;
+}
+
+const std::string& GameplayScene::getGameScriptPath() const {
+    return gameScriptPath;
+}
+
+const std::string& GameplayScene::getSceneScriptPath() const {
+    return sceneScriptPath;
+}
+
+bool GameplayScene::setGameScriptPath(const std::string& path) {
+    TierScript newGameScript;
+    if (!newGameScript.load(path, scriptManager)) {
+        return false;
+    }
+    // sceneScript's existing callScript("game", ...) binding captured gameScript by reference,
+    // not by value - reassigning gameScript's contents (not its address) is all that's needed
+    // for that binding to pick up the new script automatically. Only the NEW script's own
+    // environment needs a fresh callScript bound into it.
+    gameScript = newGameScript;
+    gameScriptPath = path;
+    gameScript.bindCallScript("scene", sceneScript);
+    return true;
+}
+
+bool GameplayScene::setSceneScriptPath(const std::string& path) {
+    TierScript newSceneScript;
+    if (!newSceneScript.load(path, scriptManager)) {
+        return false;
+    }
+    sceneScript = newSceneScript;
+    sceneScriptPath = path;
+    sceneScript.bindSceneCallScript(gameScript, scriptManager);
+    scriptManager.setSceneScript(&sceneScript);
+    return true;
 }

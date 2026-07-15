@@ -1,6 +1,7 @@
 #include "Engine/ScriptManager.h"
 #include "Engine/TierScript.h"
 #include <box2d/box2d.h>
+#include <filesystem>
 #include <iostream>
 #include <tuple>
 
@@ -155,6 +156,16 @@ ScriptData* ScriptManager::loadScript(const std::string& scriptPath) {
     auto it = cache.find(scriptPath);
     if (it != cache.end()) {
         return &it->second;
+    }
+
+    // A missing file hits luaL_loadfile's C-level open failure, which happens outside any
+    // protected-call context sol2 can catch as a normal protected_function_result - it falls
+    // through to sol2's default panic handler and aborts the process instead. Guard against that
+    // specific case here rather than relying on the protected-call check below, which only
+    // covers Lua syntax/runtime errors in a file that DID open successfully.
+    if (!std::filesystem::exists(scriptPath)) {
+        std::cerr << "Failed to load script '" << scriptPath << "': file not found" << std::endl;
+        return nullptr;
     }
 
     ScriptData data;

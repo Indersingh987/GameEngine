@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <vector>
 #include <algorithm>
+#include <cstring>
 
 // Screen-space -> world-space conversion. 1:1 today (no camera/zoom yet); kept as its
 // own function so a future camera/zoom transform has a single place to hook in.
@@ -124,6 +125,12 @@ int main(int argc, char* argv[]) {
         // mismatch silently prevented the popup from ever opening. Setting a flag and calling
         // OpenPopup at the same (top) scope as BeginPopupModal keeps both hashes identical.
         static bool requestCreateEntityPopup = false;
+        static bool requestGameScriptPopup = false;
+        static bool requestSceneScriptPopup = false;
+        static char gameScriptPathBuffer[256] = "";
+        static char sceneScriptPathBuffer[256] = "";
+        static std::string gameScriptError;
+        static std::string sceneScriptError;
 
         static bool showSceneHierarchy = true;
         static bool showInspector = true;
@@ -153,6 +160,15 @@ int main(int argc, char* argv[]) {
             if (ImGui::BeginMenu("Scene")) {
                 if (ImGui::MenuItem("Create Entity...")) {
                     requestCreateEntityPopup = true;
+                }
+                if (ImGui::MenuItem("Scene Script...")) {
+                    requestSceneScriptPopup = true;
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Scripts")) {
+                if (ImGui::MenuItem("Game Script...")) {
+                    requestGameScriptPopup = true;
                 }
                 ImGui::EndMenu();
             }
@@ -212,6 +228,62 @@ int main(int argc, char* argv[]) {
             ImGui::SameLine();
             if (ImGui::Button("Cancel")) {
                 ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
+        if (requestGameScriptPopup) {
+            requestGameScriptPopup = false;
+            gameScriptError.clear();
+            std::strncpy(gameScriptPathBuffer, gameplayScene.getGameScriptPath().c_str(), sizeof(gameScriptPathBuffer) - 1);
+            gameScriptPathBuffer[sizeof(gameScriptPathBuffer) - 1] = '\0';
+            ImGui::OpenPopup("Game Script");
+        }
+
+        if (ImGui::BeginPopupModal("Game Script", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextDisabled("The one Game script - persists for the whole app, survives scene changes.");
+            ImGui::InputText("Path", gameScriptPathBuffer, sizeof(gameScriptPathBuffer));
+            if (ImGui::Button("Apply")) {
+                if (gameplayScene.setGameScriptPath(gameScriptPathBuffer)) {
+                    ImGui::CloseCurrentPopup();
+                } else {
+                    gameScriptError = "Failed to load that script - check the path and Lua syntax.";
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+            if (!gameScriptError.empty()) {
+                ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", gameScriptError.c_str());
+            }
+            ImGui::EndPopup();
+        }
+
+        if (requestSceneScriptPopup) {
+            requestSceneScriptPopup = false;
+            sceneScriptError.clear();
+            std::strncpy(sceneScriptPathBuffer, gameplayScene.getSceneScriptPath().c_str(), sizeof(sceneScriptPathBuffer) - 1);
+            sceneScriptPathBuffer[sizeof(sceneScriptPathBuffer) - 1] = '\0';
+            ImGui::OpenPopup("Scene Script");
+        }
+
+        if (ImGui::BeginPopupModal("Scene Script", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextDisabled("This scene's script - mediates its entities, talks up to the Game script.");
+            ImGui::InputText("Path", sceneScriptPathBuffer, sizeof(sceneScriptPathBuffer));
+            if (ImGui::Button("Apply")) {
+                if (gameplayScene.setSceneScriptPath(sceneScriptPathBuffer)) {
+                    ImGui::CloseCurrentPopup();
+                } else {
+                    sceneScriptError = "Failed to load that script - check the path and Lua syntax.";
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+            if (!sceneScriptError.empty()) {
+                ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", sceneScriptError.c_str());
             }
             ImGui::EndPopup();
         }
@@ -309,7 +381,11 @@ int main(int argc, char* argv[]) {
                 } else {
                     label = "Entity " + std::to_string(entity);
                 }
-                if (ImGui::Selectable(label.c_str(), selectedEntity == entity)) {
+                // "##<id>" scopes the widget's ID to the entity's unique id without displaying
+                // it - Selectable() otherwise uses the visible label itself as the ID, so two
+                // entities with the same display name (e.g. both "Test") collide.
+                std::string widgetId = label + "##" + std::to_string(entity);
+                if (ImGui::Selectable(widgetId.c_str(), selectedEntity == entity)) {
                     selectedEntity = entity;
                 }
             }
