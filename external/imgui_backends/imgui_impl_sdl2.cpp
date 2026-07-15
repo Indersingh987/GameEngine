@@ -652,6 +652,14 @@ void ImGui_ImplSDL2_Shutdown()
     io.BackendPlatformUserData = nullptr;
     io.BackendFlags &= ~(ImGuiBackendFlags_HasMouseCursors | ImGuiBackendFlags_HasSetMousePos | ImGuiBackendFlags_HasGamepad);
     platform_io.ClearPlatformHandlers();
+
+    // NewFrame() sets these on the main viewport every frame (see ImGui_ImplSDL2_NewFrame) but
+    // never clears them - harmless without multi-viewport, but ImGui::DestroyContext() asserts
+    // all viewports have null PlatformHandle/PlatformHandleRaw before destroying.
+    ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+    main_viewport->PlatformHandle = nullptr;
+    main_viewport->PlatformHandleRaw = nullptr;
+
     IM_DELETE(bd);
 }
 
