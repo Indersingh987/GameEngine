@@ -2,3 +2,4 @@ build/
 external/vcpkg/
 MILESTONE_TASK.md
 CLAUDE.md
+imgui.ini
