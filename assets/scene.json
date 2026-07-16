@@ -18,7 +18,7 @@
             },
             "TransformComponent": {
                 "height": 50,
-                "width": 50,
+                "width": 49,
                 "x": 375.0,
                 "y": 275.0
             },
@@ -30,7 +30,7 @@
                 "gravityScale": 0.0
             },
             "ScriptComponent": {
-                "scriptPath": "assets/scripts/game/main_game.lua"
+                "scriptPath": ""
             },
             "SpriteComponent": {
                 "a": 255,

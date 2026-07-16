@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <box2d/box2d.h>
 #include <iostream>
 #include "Engine/AudioManager.h"
 #include "Engine/TextureManager.h"
@@ -13,10 +14,33 @@
 #include <algorithm>
 #include <cstring>
 
-// Screen-space -> world-space conversion. 1:1 today (no camera/zoom yet); kept as its
-// own function so a future camera/zoom transform has a single place to hook in.
-static ImVec2 screenToWorld(int screenX, int screenY) {
-    return ImVec2(static_cast<float>(screenX), static_cast<float>(screenY));
+// Editor-viewport-only preview draw: renders the given entity at a fixed centered position
+// (mirrors Systems::render's texture-vs-flat-color logic exactly, but overrides x/y - this is
+// display-only, never written back to the entity's real TransformComponent). Distinct from
+// Systems::render/GameplayScene::render, which the Playground window still uses unchanged to
+// show the full live scene at real positions.
+static void renderEntityPreview(SDL_Renderer* renderer, Scene& scene, Entity entity) {
+    if (!scene.hasComponent<TransformComponent>(entity) || !scene.hasComponent<SpriteComponent>(entity)) {
+        return;
+    }
+    auto& transform = scene.getComponent<TransformComponent>(entity);
+    auto& sprite = scene.getComponent<SpriteComponent>(entity);
+
+    constexpr int previewCenterX = 400;
+    constexpr int previewCenterY = 300;
+
+    SDL_Rect rect;
+    rect.w = transform.width;
+    rect.h = transform.height;
+    rect.x = previewCenterX - rect.w / 2;
+    rect.y = previewCenterY - rect.h / 2;
+
+    if (sprite.texture != nullptr) {
+        SDL_RenderCopy(renderer, sprite.texture, nullptr, &rect);
+    } else {
+        SDL_SetRenderDrawColor(renderer, sprite.r, sprite.g, sprite.b, sprite.a);
+        SDL_RenderFillRect(renderer, &rect);
+    }
 }
 
 // Recursively finds every .lua file under assets/scripts/ (entity scripts at the root, Game/
@@ -373,51 +397,6 @@ int main(int argc, char* argv[]) {
 
         ImGui::DockSpaceOverViewport(dockspaceId, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
 
-        static Entity draggedEntity = INVALID_ENTITY;
-        static float dragOffsetX = 0.0f;
-        static float dragOffsetY = 0.0f;
-
-        // Drag-to-position: only while editing (not Play mode), and only starts a new drag
-        // when the mouse isn't over an ImGui panel - but an in-progress drag keeps updating
-        // even if the cursor strays over a panel mid-drag.
-        if (!gameplayScene.isPlaying()) {
-            int mouseScreenX, mouseScreenY;
-            Uint32 mouseButtons = SDL_GetMouseState(&mouseScreenX, &mouseScreenY);
-            bool leftMouseDown = (mouseButtons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
-            ImVec2 worldPos = screenToWorld(mouseScreenX, mouseScreenY);
-            Scene& dragScene = gameplayScene.getScene();
-
-            if (leftMouseDown && draggedEntity == INVALID_ENTITY && !ImGui::GetIO().WantCaptureMouse) {
-                const auto& entities = dragScene.getAllEntities();
-                for (auto it = entities.rbegin(); it != entities.rend(); ++it) {
-                    Entity entity = *it;
-                    if (!dragScene.hasComponent<TransformComponent>(entity)) continue;
-                    auto& t = dragScene.getComponent<TransformComponent>(entity);
-                    if (worldPos.x >= t.x && worldPos.x <= t.x + t.width &&
-                        worldPos.y >= t.y && worldPos.y <= t.y + t.height) {
-                        draggedEntity = entity;
-                        selectedEntity = entity;
-                        dragOffsetX = worldPos.x - t.x;
-                        dragOffsetY = worldPos.y - t.y;
-                        break;
-                    }
-                }
-            }
-
-            if (leftMouseDown && draggedEntity != INVALID_ENTITY &&
-                dragScene.hasComponent<TransformComponent>(draggedEntity)) {
-                auto& t = dragScene.getComponent<TransformComponent>(draggedEntity);
-                t.x = worldPos.x - dragOffsetX;
-                t.y = worldPos.y - dragOffsetY;
-            }
-
-            if (!leftMouseDown) {
-                draggedEntity = INVALID_ENTITY;
-            }
-        } else {
-            draggedEntity = INVALID_ENTITY;
-        }
-
         if (showSceneHierarchy) {
             ImGui::Begin("Scene Hierarchy", &showSceneHierarchy);
 
@@ -448,6 +427,34 @@ int main(int argc, char* argv[]) {
             ImGui::BeginDisabled(gameplayScene.isPlaying());
             if (selectedEntity != INVALID_ENTITY) {
                 Scene& scene = gameplayScene.getScene();
+
+                if (scene.hasComponent<TagComponent>(selectedEntity)) {
+                    auto& tag = scene.getComponent<TagComponent>(selectedEntity);
+                    ImGui::Text("Tag");
+
+                    char nameBuffer[256];
+                    std::strncpy(nameBuffer, tag.displayName.c_str(), sizeof(nameBuffer) - 1);
+                    nameBuffer[sizeof(nameBuffer) - 1] = '\0';
+                    if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
+                        tag.displayName = nameBuffer;
+                    }
+
+                    // Same unclaim-previous-player logic as Create Entity's checkbox
+                    // (GameplayScene::createEntity), plus a self-guard since - unlike a freshly
+                    // created entity - this one might already BE the current player.
+                    bool isPlayer = (tag.role == "player");
+                    if (ImGui::Checkbox("Is Player-Controlled", &isPlayer)) {
+                        if (isPlayer) {
+                            Entity previousPlayer = scene.findEntityByRole("player");
+                            if (previousPlayer != INVALID_ENTITY && previousPlayer != selectedEntity) {
+                                scene.getComponent<TagComponent>(previousPlayer).role = "";
+                            }
+                            tag.role = "player";
+                        } else {
+                            tag.role = "";
+                        }
+                    }
+                }
 
                 if (scene.hasComponent<TransformComponent>(selectedEntity)) {
                     auto& transform = scene.getComponent<TransformComponent>(selectedEntity);
@@ -486,6 +493,34 @@ int main(int argc, char* argv[]) {
                     }
                 }
 
+                if (scene.hasComponent<PhysicsComponent>(selectedEntity)) {
+                    auto& phys = scene.getComponent<PhysicsComponent>(selectedEntity);
+                    ImGui::Text("Physics");
+                    int bodyTypeIndex = static_cast<int>(phys.bodyType);
+                    if (ImGui::Combo("Body Type", &bodyTypeIndex, bodyTypeNames, IM_ARRAYSIZE(bodyTypeNames))) {
+                        // createPhysicsBody doesn't destroy an existing body first (Scene.cpp) -
+                        // do it ourselves, same B2_IS_NULL/b2DestroyBody pattern Scene::destroyEntity
+                        // and Scene::clear already use, then rebuild with the new body type.
+                        if (!B2_IS_NULL(phys.bodyId)) {
+                            b2DestroyBody(phys.bodyId);
+                            phys.bodyId = b2_nullBodyId;
+                        }
+                        phys.bodyType = static_cast<BodyType>(bodyTypeIndex);
+                        scene.createPhysicsBody(selectedEntity);
+                    }
+                }
+
+                if (scene.hasComponent<ScriptComponent>(selectedEntity)) {
+                    auto& scriptComp = scene.getComponent<ScriptComponent>(selectedEntity);
+                    ImGui::Text("Script");
+                    char scriptPathBuffer[256];
+                    std::strncpy(scriptPathBuffer, scriptComp.scriptPath.c_str(), sizeof(scriptPathBuffer) - 1);
+                    scriptPathBuffer[sizeof(scriptPathBuffer) - 1] = '\0';
+                    if (ImGui::InputText("Script Path", scriptPathBuffer, sizeof(scriptPathBuffer))) {
+                        scriptComp.scriptPath = scriptPathBuffer;
+                    }
+                }
+
                 if (ImGui::Button("Delete Entity")) {
                     scene.destroyEntity(selectedEntity);
                     selectedEntity = INVALID_ENTITY;
@@ -517,7 +552,9 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 30, 30, 60, 255);
         SDL_RenderClear(renderer);
 
-        gameplayScene.render(renderer);
+        if (selectedEntity != INVALID_ENTITY) {
+            renderEntityPreview(renderer, gameplayScene.getScene(), selectedEntity);
+        }
 
         ImGui::Render();
         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
