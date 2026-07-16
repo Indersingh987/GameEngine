@@ -1,0 +1,28 @@
+{
+    "entities": [
+        {
+            "PhysicsComponent": {
+                "bodyType": "Static",
+                "gravityScale": 0.0
+            },
+            "SpriteComponent": {
+                "a": 255,
+                "b": 40,
+                "g": 220,
+                "r": 40,
+                "texturePath": ""
+            },
+            "TagComponent": {
+                "displayName": "Scene2Marker",
+                "role": ""
+            },
+            "TransformComponent": {
+                "height": 120,
+                "width": 120,
+                "x": 340.0,
+                "y": 240.0
+            },
+            "id": 1
+        }
+    ]
+}

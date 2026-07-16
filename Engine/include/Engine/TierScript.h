@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/ScriptManager.h"
+#include <functional>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -56,6 +57,13 @@ public:
     // are forwarded to that entity's function. Entity <-> Entity direct calls stay impossible:
     // this is the only place an "entity" target is ever accepted.
     void bindSceneCallScript(TierScript& gameScript, ScriptManager& scriptManager);
+
+    // Binds a switchScene(scenePath, sceneScriptPath) -> bool function into this script's OWN
+    // environment only - never call this for sceneScript or any entity script. This is the
+    // structural enforcement that only the Game tier may load/switch scenes (same technique as
+    // bindCallScript's direction rules: a script simply doesn't have a binding to a forbidden
+    // capability, rather than a runtime caller-identity check).
+    void bindSwitchScene(std::function<bool(const std::string&, const std::string&)> switchFn);
 
 private:
     ScriptData* data = nullptr;

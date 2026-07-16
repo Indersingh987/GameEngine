@@ -62,3 +62,11 @@ void TierScript::bindSceneCallScript(TierScript& gameScript, ScriptManager& scri
             return sol::lua_nil;
         });
 }
+
+void TierScript::bindSwitchScene(std::function<bool(const std::string&, const std::string&)> switchFn) {
+    if (data == nullptr) {
+        return;
+    }
+
+    data->env.set_function("switchScene", switchFn);
+}

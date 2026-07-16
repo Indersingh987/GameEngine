@@ -37,6 +37,13 @@ public:
     bool setGameScriptPath(const std::string& path);
     bool setSceneScriptPath(const std::string& path);
 
+    // The one capability reserved for the Game tier: loads a different scene + that scene's own
+    // Scene script together (bound into gameScript's env as switchScene(), never reachable from
+    // Scene/Entity scripts). Validates both new paths before touching any current state - leaves
+    // everything untouched and returns false if either fails to load.
+    bool switchScene(const std::string& newScenePath, const std::string& newSceneScriptPath);
+    const std::string& getScenePath() const;
+
 private:
     Scene scene;
     AudioManager& audio;
@@ -44,15 +51,18 @@ private:
     ScriptManager scriptManager;
 
     // Game script: one per app, loaded once, persists across scene reloads. Scene script: one
-    // per scene - reloaded alongside `scene` once scene switching exists. Reassignable at
-    // runtime via setGameScriptPath/setSceneScriptPath (Scripts/Scene menu popups).
+    // per scene - reloaded alongside `scene` on every switchScene() call. Reassignable at
+    // runtime via setGameScriptPath/setSceneScriptPath (Scripts/Scene menu popups) or switchScene.
     TierScript gameScript;
     TierScript sceneScript;
     std::string gameScriptPath;
     std::string sceneScriptPath;
+    std::string scenePath = "assets/scene.json";
 
     bool playing = false;
     nlohmann::json playSnapshot;
+    std::string playSnapshotScenePath;
+    std::string playSnapshotSceneScriptPath;
 
    void createPhysicsBody(Entity entity);
 };

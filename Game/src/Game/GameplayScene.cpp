@@ -1,5 +1,7 @@
 #include "Game/GameplayScene.h"
+#include <filesystem>
 #include <fstream>
+#include <iostream>
 
 namespace {
 constexpr const char* GAME_SCRIPT_PATH = "assets/scripts/game/main_game.lua";
@@ -15,6 +17,9 @@ GameplayScene::GameplayScene(AudioManager& audioRef, TextureManager& texturesRef
     sceneScriptPath = SCENE_SCRIPT_PATH;
     sceneScript.bindSceneCallScript(gameScript, scriptManager);
     gameScript.bindCallScript("scene", sceneScript);
+    gameScript.bindSwitchScene([this](const std::string& newScenePath, const std::string& newSceneScriptPath) {
+        return switchScene(newScenePath, newSceneScriptPath);
+    });
     scriptManager.setSceneScript(&sceneScript);
 
     std::ifstream saveFile("assets/scene.json");
@@ -162,6 +167,8 @@ void GameplayScene::play() {
         return;
     }
     playSnapshot = scene.captureSnapshot();
+    playSnapshotScenePath = scenePath;
+    playSnapshotSceneScriptPath = sceneScriptPath;
     playing = true;
 }
 
@@ -172,6 +179,13 @@ void GameplayScene::stop() {
     scene.restoreSnapshot(playSnapshot);
     reinitializePhysics();
     reinitializeTextures();
+    // A switchScene() call during Play is transient gameplay state, same as any other
+    // script-driven mutation - Stop reverts to exactly the scene (and scene script) that was
+    // active when Play was pressed, not wherever the game wandered to.
+    if (sceneScriptPath != playSnapshotSceneScriptPath) {
+        setSceneScriptPath(playSnapshotSceneScriptPath);
+    }
+    scenePath = playSnapshotScenePath;
     playing = false;
 }
 
@@ -207,6 +221,9 @@ bool GameplayScene::setGameScriptPath(const std::string& path) {
     gameScript = newGameScript;
     gameScriptPath = path;
     gameScript.bindCallScript("scene", sceneScript);
+    gameScript.bindSwitchScene([this](const std::string& newScenePath, const std::string& newSceneScriptPath) {
+        return switchScene(newScenePath, newSceneScriptPath);
+    });
     return true;
 }
 
@@ -219,5 +236,38 @@ bool GameplayScene::setSceneScriptPath(const std::string& path) {
     sceneScriptPath = path;
     sceneScript.bindSceneCallScript(gameScript, scriptManager);
     scriptManager.setSceneScript(&sceneScript);
+    return true;
+}
+
+const std::string& GameplayScene::getScenePath() const {
+    return scenePath;
+}
+
+bool GameplayScene::switchScene(const std::string& newScenePath, const std::string& newSceneScriptPath) {
+    // Validate both new paths before mutating anything - same all-or-nothing contract as
+    // setGameScriptPath/setSceneScriptPath. Scene script first (cheap, no side effects yet).
+    TierScript newSceneScript;
+    if (!newSceneScript.load(newSceneScriptPath, scriptManager)) {
+        std::cerr << "switchScene: failed to load scene script: " << newSceneScriptPath << std::endl;
+        return false;
+    }
+    // Scene::loadFromFile doesn't guard a missing file itself (unlike ScriptManager::loadScript -
+    // see Known Gotcha #14) - this path is reachable from Lua, so check explicitly rather than
+    // risking an unguarded stream-read failure.
+    if (!std::filesystem::exists(newScenePath)) {
+        std::cerr << "switchScene: scene file not found: " << newScenePath << std::endl;
+        return false;
+    }
+
+    scene.loadFromFile(newScenePath);
+    reinitializePhysics();
+    reinitializeTextures();
+
+    sceneScript = newSceneScript;
+    sceneScriptPath = newSceneScriptPath;
+    sceneScript.bindSceneCallScript(gameScript, scriptManager);
+    scriptManager.setSceneScript(&sceneScript);
+
+    scenePath = newScenePath;
     return true;
 }

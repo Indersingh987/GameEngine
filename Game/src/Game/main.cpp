@@ -168,11 +168,11 @@ int main(int argc, char* argv[]) {
             ImGui::BeginDisabled(gameplayScene.isPlaying());
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("Save Scene")) {
-                    gameplayScene.getScene().saveToFile("assets/scene.json");
+                    gameplayScene.getScene().saveToFile(gameplayScene.getScenePath());
                 }
                 if (ImGui::MenuItem("Load Scene")) {
                     try {
-                        gameplayScene.getScene().loadFromFile("assets/scene.json");
+                        gameplayScene.getScene().loadFromFile(gameplayScene.getScenePath());
                         gameplayScene.reinitializePhysics();
                         gameplayScene.reinitializeTextures();
                         selectedEntity = INVALID_ENTITY;
