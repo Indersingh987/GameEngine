@@ -41,5 +41,5 @@ struct TagComponent {
 };
 
 struct ScriptComponent {
-    std::string scriptPath;  // e.g. "assets/scripts/flap.lua". Runtime handle added in a later step.
+    std::string scriptPath;  // e.g. "assets/scripts/Entities/flap.lua". Runtime handle added in a later step.
 };

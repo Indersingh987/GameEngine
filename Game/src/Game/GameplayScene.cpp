@@ -4,8 +4,8 @@
 #include <iostream>
 
 namespace {
-constexpr const char* GAME_SCRIPT_PATH = "assets/scripts/game/main_game.lua";
-constexpr const char* SCENE_SCRIPT_PATH = "assets/scripts/scene/main_scene.lua";
+constexpr const char* GAME_SCRIPT_PATH = "assets/scripts/Game/main_game.lua";
+constexpr const char* SCENE_SCRIPT_PATH = "assets/scripts/Scenes/main_scene.lua";
 }
 
 GameplayScene::GameplayScene(AudioManager& audioRef, TextureManager& texturesRef)

@@ -43,8 +43,8 @@ static void renderEntityPreview(SDL_Renderer* renderer, Scene& scene, Entity ent
     }
 }
 
-// Recursively finds every .lua file under assets/scripts/ (entity scripts at the root, Game/
-// Scene scripts under game/ and scene/) for the Script Browser panel. Rescanned on demand via
+// Recursively finds every .lua file under assets/scripts/ (entity scripts under Entities/, Game/
+// Scene scripts under Game/ and Scenes/) for the Script Browser panel. Rescanned on demand via
 // its Refresh button, not every frame - the script set only changes when a file is added.
 static std::vector<std::string> scanLuaScripts() {
     std::vector<std::string> paths;

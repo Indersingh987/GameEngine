@@ -10,7 +10,7 @@ function onScoreReported(score)
     print("[GameScript] onScoreReported: " .. tostring(score))
 
     if score >= 100 then
-        local ok = switchScene("assets/scene2.json", "assets/scripts/scene/scene2_scene.lua")
+        local ok = switchScene("assets/scene2.json", "assets/scripts/Scenes/scene2_scene.lua")
         print("[GameScript] switchScene result: " .. tostring(ok))
     end
 
