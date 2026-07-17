@@ -8,8 +8,11 @@
 #include "imgui_internal.h" // DockBuilder* - programmatic default dock layout, first run only
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
+#include "TextEditor.h"
 #include <string>
+#include <fstream>
 #include <filesystem>
+#include <iterator>
 #include <vector>
 #include <algorithm>
 #include <cstring>
@@ -533,21 +536,98 @@ int main(int argc, char* argv[]) {
         }
 
         static std::vector<std::string> luaScripts = scanLuaScripts();
+
+        // Script Editor state (step 3 of the build order in CLAUDE.md): which script, if any, is
+        // currently open, and the widget showing it. Declared here (rather than inside either
+        // panel's own block) so both the Script Browser block below and the Script Editor block
+        // can see the same statics - a static declared inside a nested block is only visible in
+        // that block. Read-only for now per the build order - Save wiring is step 4.
+        static std::string openScriptPath;
+        static std::string saveStatus;
+        static TextEditor scriptEditor = [] {
+            TextEditor editor;
+            editor.SetLanguageDefinition(TextEditor::LanguageDefinition::Lua());
+            return editor;
+        }();
+
         if (showScriptBrowser) {
             ImGui::Begin("Script Browser", &showScriptBrowser);
             if (ImGui::Button("Refresh")) {
                 luaScripts = scanLuaScripts();
             }
             ImGui::SameLine();
-            ImGui::TextDisabled("Click a path to copy it");
+            ImGui::TextDisabled("Click a path to open it in the Script Editor");
             ImGui::Separator();
             for (const std::string& path : luaScripts) {
-                if (ImGui::Selectable(path.c_str())) {
-                    ImGui::SetClipboardText(path.c_str());
+                if (ImGui::Selectable(path.c_str(), path == openScriptPath)) {
+                    std::ifstream in(path);
+                    std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+                    scriptEditor.SetText(content);
+                    scriptEditor.SetErrorMarkers({});
+                    openScriptPath = path;
+                    saveStatus.clear();
                 }
             }
             ImGui::End();
         }
+
+        ImGui::Begin("Script Editor");
+        if (openScriptPath.empty()) {
+            ImGui::TextDisabled("No script open - click a path in Script Browser to open it.");
+        } else {
+            ImGui::TextUnformatted(openScriptPath.c_str());
+            ImGui::SameLine();
+            if (ImGui::Button("Save")) {
+                std::string syntaxError;
+                int syntaxErrorLine = 1;
+                std::string currentText = scriptEditor.GetText();
+                if (!gameplayScene.checkScriptSyntax(currentText, openScriptPath, syntaxError, syntaxErrorLine)) {
+                    // Caught before ever touching disk - the file on disk keeps whatever its
+                    // last-saved (valid) content was, and no reload is attempted.
+                    scriptEditor.SetErrorMarkers({{syntaxErrorLine, syntaxError}});
+                    saveStatus = "Syntax error, NOT saved - see line " + std::to_string(syntaxErrorLine) + " below.";
+                } else {
+                    scriptEditor.SetErrorMarkers({});
+                    std::ofstream out(openScriptPath, std::ios::trunc);
+                    if (!out) {
+                        saveStatus = "Failed to write file: " + openScriptPath;
+                    } else {
+                        out << currentText;
+                        out.close();
+
+                        // Which reload path decision 2 requires depends on whether this path is
+                        // the ACTIVE Game/Scene script right now - those need the load-then-rebind
+                        // sequence (callScript/switchScene bindings), not the entity-script
+                        // in-place cache reload, which would silently drop those bindings. A
+                        // reload failure here should be rare now that Save only ever writes
+                        // syntax-checked content, but stays possible (e.g. a runtime error
+                        // resolving onUpdate) so this path is kept, not removed.
+                        bool reloadOk;
+                        const char* kind;
+                        if (openScriptPath == gameplayScene.getGameScriptPath()) {
+                            reloadOk = gameplayScene.setGameScriptPath(openScriptPath);
+                            kind = "Game";
+                        } else if (openScriptPath == gameplayScene.getSceneScriptPath()) {
+                            reloadOk = gameplayScene.setSceneScriptPath(openScriptPath);
+                            kind = "Scene";
+                        } else {
+                            reloadOk = gameplayScene.reloadEntityScript(openScriptPath);
+                            kind = "Entity";
+                        }
+                        saveStatus = reloadOk
+                            ? (std::string("Saved and reloaded (") + kind + " script).")
+                            : (std::string("Saved, but reload FAILED (") + kind + " script) - check console for the parse error.");
+                    }
+                }
+            }
+            if (!saveStatus.empty()) {
+                ImGui::SameLine();
+                ImGui::TextDisabled("%s", saveStatus.c_str());
+            }
+            ImGui::Separator();
+            scriptEditor.Render("ScriptEditor", ImVec2(0, 0), true);
+        }
+        ImGui::End();
 
         SDL_SetRenderDrawColor(renderer, 30, 30, 60, 255);
         SDL_RenderClear(renderer);

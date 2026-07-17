@@ -16,3 +16,4 @@ function onScoreReported(score)
 
     return "acknowledged"
 end
+

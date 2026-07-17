@@ -239,6 +239,14 @@ bool GameplayScene::setSceneScriptPath(const std::string& path) {
     return true;
 }
 
+bool GameplayScene::reloadEntityScript(const std::string& path) {
+    return scriptManager.reloadScript(path);
+}
+
+bool GameplayScene::checkScriptSyntax(const std::string& code, const std::string& chunkName, std::string& outError, int& outErrorLine) {
+    return scriptManager.checkSyntax(code, chunkName, outError, outErrorLine);
+}
+
 const std::string& GameplayScene::getScenePath() const {
     return scenePath;
 }

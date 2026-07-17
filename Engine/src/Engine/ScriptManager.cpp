@@ -1,6 +1,7 @@
 #include "Engine/ScriptManager.h"
 #include "Engine/TierScript.h"
 #include <box2d/box2d.h>
+#include <charconv>
 #include <filesystem>
 #include <iostream>
 #include <tuple>
@@ -152,39 +153,110 @@ sol::object ScriptManager::callEntityFunction(Entity entity, const std::string& 
     return invokeScriptFunction(*data, functionName, sol::as_args(fullArgs));
 }
 
+bool ScriptManager::parseScript(const std::string& scriptPath, ScriptData& outData) {
+    // A missing file hits luaL_loadfile's C-level open failure, which happens outside any
+    // protected-call context sol2 can catch as a normal protected_function_result - it falls
+    // through to sol2's default panic handler and aborts the process instead. Guard against that
+    // specific case here rather than relying on the protected-call check below.
+    if (!std::filesystem::exists(scriptPath)) {
+        std::cerr << "Failed to load script '" << scriptPath << "': file not found" << std::endl;
+        return false;
+    }
+
+    ScriptData data;
+    data.env = sol::environment(lua, sol::new_table(), lua.globals());
+
+    // MUST pass sol::script_pass_on_error explicitly. script_file()'s DEFAULT error handler
+    // (script_default_on_error, used if this 3rd arg is omitted) throws a C++ sol::error on any
+    // load-time failure - including a plain Lua SYNTAX error in a file that opened fine, not just
+    // the missing-file case guarded above - because this vcpkg sol2 build has SOL_EXCEPTIONS on
+    // and SOL_DEFAULT_PASS_ON_ERROR off (confirmed by reading the installed
+    // sol/state_handling.hpp). Nothing in this call chain catches sol::error, so that throw was
+    // an unhandled-exception crash waiting to happen on any bad script, not just this feature's
+    // new Save button. script_pass_on_error instead just returns the invalid
+    // protected_function_result, letting the check below handle it the way the rest of this
+    // function already assumes.
+    sol::protected_function_result result = lua.script_file(scriptPath, data.env, sol::script_pass_on_error);
+    if (!result.valid()) {
+        sol::error err = result;
+        std::cerr << "Failed to load script '" << scriptPath << "': " << err.what() << std::endl;
+        return false;
+    }
+
+    data.onUpdate = data.env["onUpdate"];
+    data.onCollision = data.env["onCollision"];
+
+    outData = std::move(data);
+    return true;
+}
+
 ScriptData* ScriptManager::loadScript(const std::string& scriptPath) {
     auto it = cache.find(scriptPath);
     if (it != cache.end()) {
         return &it->second;
     }
 
-    // A missing file hits luaL_loadfile's C-level open failure, which happens outside any
-    // protected-call context sol2 can catch as a normal protected_function_result - it falls
-    // through to sol2's default panic handler and aborts the process instead. Guard against that
-    // specific case here rather than relying on the protected-call check below, which only
-    // covers Lua syntax/runtime errors in a file that DID open successfully.
-    if (!std::filesystem::exists(scriptPath)) {
-        std::cerr << "Failed to load script '" << scriptPath << "': file not found" << std::endl;
-        return nullptr;
-    }
-
     ScriptData data;
-    data.env = sol::environment(lua, sol::new_table(), lua.globals());
-
-    sol::protected_function_result result = lua.script_file(scriptPath, data.env);
-    if (!result.valid()) {
-        sol::error err = result;
-        std::cerr << "Failed to load script '" << scriptPath << "': " << err.what() << std::endl;
+    if (!parseScript(scriptPath, data)) {
         return nullptr;
     }
-
-    data.onUpdate = data.env["onUpdate"];
-    data.onCollision = data.env["onCollision"];
 
     auto [insertedIt, inserted] = cache.emplace(scriptPath, std::move(data));
     return &insertedIt->second;
 }
 
+bool ScriptManager::reloadScript(const std::string& scriptPath) {
+    ScriptData data;
+    if (!parseScript(scriptPath, data)) {
+        return false;
+    }
+
+    auto it = cache.find(scriptPath);
+    if (it != cache.end()) {
+        // Assign into the existing slot rather than erase+emplace - keeps the slot's address
+        // stable so any raw ScriptData* already handed out (e.g. TierScript::data, though
+        // TierScripts should not go through this path - see the header comment) stays valid.
+        it->second = std::move(data);
+    } else {
+        cache.emplace(scriptPath, std::move(data));
+    }
+    return true;
+}
+
 void ScriptManager::clearCache() {
     cache.clear();
+}
+
+bool ScriptManager::checkSyntax(const std::string& code, const std::string& chunkName, std::string& outError, int& outErrorLine) {
+    // Lua's chunk-name convention (luaO_chunkid, confirmed by reading the actual vendored Lua
+    // source in external/vcpkg/buildtrees/lua): a bare chunk name with no '@'/'=' prefix is
+    // treated as a literal source STRING and gets wrapped as `[string "chunkName"]` in error
+    // messages, not shown as chunkName itself - the '@' prefix is what tells Lua to treat it as
+    // a filename and display it clean. Without this, the prefix match below never matches
+    // anything and outErrorLine silently stays stuck at 1 regardless of the real error line.
+    sol::load_result result = lua.load(code, "@" + chunkName);
+    if (result.valid()) {
+        return true;
+    }
+
+    sol::error err = result;
+    outError = err.what();
+
+    // Lua's own syntax errors are formatted "chunkname:line: message" - pull the line back out
+    // so the editor can place an ErrorMarker on it. Falls back to line 1 if the message doesn't
+    // match that format (defensive only - lua_load's syntax errors always do).
+    outErrorLine = 1;
+    std::string prefix = chunkName + ":";
+    if (outError.rfind(prefix, 0) == 0) {
+        std::size_t lineStart = prefix.size();
+        std::size_t lineEnd = outError.find(':', lineStart);
+        if (lineEnd != std::string::npos) {
+            int parsedLine = 0;
+            auto [ptr, ec] = std::from_chars(outError.data() + lineStart, outError.data() + lineEnd, parsedLine);
+            if (ec == std::errc()) {
+                outErrorLine = parsedLine;
+            }
+        }
+    }
+    return false;
 }

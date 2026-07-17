@@ -2,7 +2,7 @@
 -- Manages gravity/flap fully in script via getVelocity/setVelocity (m/s), rather than
 -- PhysicsComponent.gravityScale - the editor has no UI to set gravityScale non-zero yet,
 -- so this script owns vertical motion entirely instead.
-local GRAVITY = 20.0        -- m/s^2
+local GRAVITY = 25.0        -- m/s^2
 local FLAP_VELOCITY = -6.0  -- m/s, negative = up
 local MAX_FALL_SPEED = 10.0 -- m/s
 local WINDOW_HEIGHT = 600
@@ -33,3 +33,4 @@ function onUpdate(entity, deltaTime)
         setVelocity(entity, vx, 0)
     end
 end
+

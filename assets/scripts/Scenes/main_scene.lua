@@ -7,8 +7,11 @@ function onEntityPinged(entityId)
     local ack = callScript("game", "onScoreReported", 42)
     print("[SceneScript] game acknowledged: " .. tostring(ack))
 
-    local entityAck = callScript("entity", "onPingAcknowledged", entityId, "hello from scene")
+    local entityAck = callScript("entity", "onPingAcknowledged", entityId, "hello scene")
     print("[SceneScript] entity acknowledged: " .. tostring(entityAck))
 
     return "scene-ack"
+
 end
+
+

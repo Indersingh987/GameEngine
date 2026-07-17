@@ -32,6 +32,7 @@ target_include_directories(Engine PUBLIC Engine/include external/imgui_backends 
 add_executable(Game
     Game/src/Game/main.cpp
     Game/src/Game/GameplayScene.cpp
+    external/ImGuiColorTextEdit/TextEditor.cpp
 )
-target_include_directories(Game PRIVATE Game/include)
+target_include_directories(Game PRIVATE Game/include external/ImGuiColorTextEdit)
 target_link_libraries(Game PRIVATE Engine)
