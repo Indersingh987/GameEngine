@@ -21,6 +21,10 @@ public:
     Entity createEntity(const std::string& displayName, BodyType bodyType, bool isPlayer,
                          const std::string& scriptPath = "");
 
+    // Shared default used both at entity creation and by the Inspector's "Add Sprite" button, so
+    // there's one source of truth for what a SpriteComponent looks like before the user customizes it.
+    static SpriteComponent defaultSpriteComponent();
+
     void play();
     void stop();
     bool isPlaying() const;

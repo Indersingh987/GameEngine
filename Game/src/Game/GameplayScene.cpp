@@ -129,7 +129,7 @@ Entity GameplayScene::createEntity(const std::string& displayName, BodyType body
         windowCenterY - defaultHeight / 2.0f,
         defaultWidth, defaultHeight
     });
-    scene.addComponent<SpriteComponent>(entity, {200, 200, 200, 255});
+    scene.addComponent<SpriteComponent>(entity, defaultSpriteComponent());
     scene.addComponent<PhysicsComponent>(entity, {b2_nullBodyId, bodyType, 0.0f});
     scene.addComponent<TagComponent>(entity, {displayName, isPlayer ? "player" : ""});
     if (!scriptPath.empty()) {
@@ -141,6 +141,10 @@ Entity GameplayScene::createEntity(const std::string& displayName, BodyType body
 
 void GameplayScene::createPhysicsBody(Entity entity) {
     scene.createPhysicsBody(entity);
+}
+
+SpriteComponent GameplayScene::defaultSpriteComponent() {
+    return SpriteComponent{200, 200, 200, 255};
 }
 
 void GameplayScene::reinitializePhysics() {

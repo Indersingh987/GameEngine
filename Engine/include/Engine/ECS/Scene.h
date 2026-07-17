@@ -45,6 +45,11 @@ public:
     }
 
     template<typename T>
+    void removeComponent(Entity entity) {
+        getStorage<T>().erase(entity);
+    }
+
+    template<typename T>
     std::unordered_map<Entity, T>& getStorage();
 
 private:

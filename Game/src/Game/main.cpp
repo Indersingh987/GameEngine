@@ -454,6 +454,12 @@ int main(int argc, char* argv[]) {
                             tag.role = "";
                         }
                     }
+
+                    if (ImGui::Button("Remove Tag")) {
+                        scene.removeComponent<TagComponent>(selectedEntity);
+                    }
+                } else if (ImGui::Button("Add Tag")) {
+                    scene.addComponent<TagComponent>(selectedEntity, TagComponent{});
                 }
 
                 if (scene.hasComponent<TransformComponent>(selectedEntity)) {
@@ -491,6 +497,12 @@ int main(int argc, char* argv[]) {
                             sprite.texture = nullptr;
                         }
                     }
+
+                    if (ImGui::Button("Remove Sprite")) {
+                        scene.removeComponent<SpriteComponent>(selectedEntity);
+                    }
+                } else if (ImGui::Button("Add Sprite")) {
+                    scene.addComponent<SpriteComponent>(selectedEntity, GameplayScene::defaultSpriteComponent());
                 }
 
                 if (scene.hasComponent<PhysicsComponent>(selectedEntity)) {
@@ -508,6 +520,16 @@ int main(int argc, char* argv[]) {
                         phys.bodyType = static_cast<BodyType>(bodyTypeIndex);
                         scene.createPhysicsBody(selectedEntity);
                     }
+
+                    if (ImGui::Button("Remove Physics")) {
+                        if (!B2_IS_NULL(phys.bodyId)) {
+                            b2DestroyBody(phys.bodyId);
+                        }
+                        scene.removeComponent<PhysicsComponent>(selectedEntity);
+                    }
+                } else if (ImGui::Button("Add Physics")) {
+                    scene.addComponent<PhysicsComponent>(selectedEntity, PhysicsComponent{});
+                    scene.createPhysicsBody(selectedEntity);
                 }
 
                 if (scene.hasComponent<ScriptComponent>(selectedEntity)) {
@@ -519,6 +541,12 @@ int main(int argc, char* argv[]) {
                     if (ImGui::InputText("Script Path", scriptPathBuffer, sizeof(scriptPathBuffer))) {
                         scriptComp.scriptPath = scriptPathBuffer;
                     }
+
+                    if (ImGui::Button("Remove Script")) {
+                        scene.removeComponent<ScriptComponent>(selectedEntity);
+                    }
+                } else if (ImGui::Button("Add Script")) {
+                    scene.addComponent<ScriptComponent>(selectedEntity, ScriptComponent{});
                 }
 
                 if (ImGui::Button("Delete Entity")) {
