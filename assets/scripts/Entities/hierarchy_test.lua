@@ -22,3 +22,4 @@ function onUpdate(entity, deltaTime)
     local rejected = callScript("game", "onScoreReported", 999)
     print("[hierarchy_test] forbidden call returned: " .. tostring(rejected))
 end
+

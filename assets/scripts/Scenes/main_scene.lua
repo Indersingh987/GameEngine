@@ -1,6 +1,7 @@
 -- Scene script: exactly one per scene. Mediates all entity scripts within this scene.
 -- Called into from entity scripts via callScript("scene", functionName, ...), and reports
 -- upward to the Game script via callScript("game", functionName, ...).
+--test comment
 
 function onEntityPinged(entityId)
     print("[SceneScript] onEntityPinged from entity " .. tostring(entityId))
@@ -13,5 +14,6 @@ function onEntityPinged(entityId)
     return "scene-ack"
 
 end
+
 
 

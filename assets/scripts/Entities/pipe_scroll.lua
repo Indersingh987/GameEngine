@@ -7,7 +7,7 @@
 -- its own - a deliberate limitation, not a bug. Re-attach pipe_scroll.lua to it via
 -- the editor if continuous recycling is needed.
 local SCROLL_SPEED = 150   -- pixels/s
-local WINDOW_WIDTH = 800
+local WINDOW_WIDTH = 800 
 local WINDOW_HEIGHT = 600
 local PIPE_WIDTH = 80
 
@@ -51,3 +51,4 @@ function onUpdate(entity, deltaTime)
         setColor(newPipe, 60, 180, 80, 255)
     end
 end
+

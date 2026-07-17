@@ -541,14 +541,30 @@ int main(int argc, char* argv[]) {
         // currently open, and the widget showing it. Declared here (rather than inside either
         // panel's own block) so both the Script Browser block below and the Script Editor block
         // can see the same statics - a static declared inside a nested block is only visible in
-        // that block. Read-only for now per the build order - Save wiring is step 4.
+        // that block.
         static std::string openScriptPath;
         static std::string saveStatus;
+        static bool isDirty = false;
+        static std::string pendingOpenPath;      // step 5: path waiting on a discard confirmation
+        static bool requestDiscardConfirmPopup = false;
         static TextEditor scriptEditor = [] {
             TextEditor editor;
             editor.SetLanguageDefinition(TextEditor::LanguageDefinition::Lua());
             return editor;
         }();
+
+        // Loads path's file content into the editor, discarding whatever was open before -
+        // callers are responsible for having already confirmed that's OK (see the discard-confirm
+        // popup below, decision 6 of the build order).
+        auto openScriptFile = [&](const std::string& path) {
+            std::ifstream in(path);
+            std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+            scriptEditor.SetText(content);
+            scriptEditor.SetErrorMarkers({});
+            openScriptPath = path;
+            saveStatus.clear();
+            isDirty = false;
+        };
 
         if (showScriptBrowser) {
             ImGui::Begin("Script Browser", &showScriptBrowser);
@@ -560,22 +576,45 @@ int main(int argc, char* argv[]) {
             ImGui::Separator();
             for (const std::string& path : luaScripts) {
                 if (ImGui::Selectable(path.c_str(), path == openScriptPath)) {
-                    std::ifstream in(path);
-                    std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-                    scriptEditor.SetText(content);
-                    scriptEditor.SetErrorMarkers({});
-                    openScriptPath = path;
-                    saveStatus.clear();
+                    if (path != openScriptPath) {
+                        if (isDirty) {
+                            pendingOpenPath = path;
+                            requestDiscardConfirmPopup = true;
+                        } else {
+                            openScriptFile(path);
+                        }
+                    }
                 }
             }
             ImGui::End();
+        }
+
+        // Must be called every frame regardless of Script Browser's own visibility, same reason
+        // as the Create Entity/Game Script/Scene Script popups above - ImGui needs OpenPopup and
+        // BeginPopupModal to both run every frame for the popup state machine to work.
+        if (requestDiscardConfirmPopup) {
+            requestDiscardConfirmPopup = false;
+            ImGui::OpenPopup("Discard Unsaved Changes?");
+        }
+        if (ImGui::BeginPopupModal("Discard Unsaved Changes?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Unsaved edits in:\n%s\n\nDiscard them and open:\n%s?",
+                        openScriptPath.c_str(), pendingOpenPath.c_str());
+            if (ImGui::Button("Discard and Open")) {
+                openScriptFile(pendingOpenPath);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
         }
 
         ImGui::Begin("Script Editor");
         if (openScriptPath.empty()) {
             ImGui::TextDisabled("No script open - click a path in Script Browser to open it.");
         } else {
-            ImGui::TextUnformatted(openScriptPath.c_str());
+            ImGui::TextUnformatted((openScriptPath + (isDirty ? " *" : "")).c_str());
             ImGui::SameLine();
             if (ImGui::Button("Save")) {
                 std::string syntaxError;
@@ -594,6 +633,7 @@ int main(int argc, char* argv[]) {
                     } else {
                         out << currentText;
                         out.close();
+                        isDirty = false; // content now matches what's on disk, regardless of reload outcome below
 
                         // Which reload path decision 2 requires depends on whether this path is
                         // the ACTIVE Game/Scene script right now - those need the load-then-rebind
@@ -626,6 +666,9 @@ int main(int argc, char* argv[]) {
             }
             ImGui::Separator();
             scriptEditor.Render("ScriptEditor", ImVec2(0, 0), true);
+            if (scriptEditor.IsTextChanged()) {
+                isDirty = true;
+            }
         }
         ImGui::End();
 
