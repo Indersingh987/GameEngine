@@ -153,9 +153,6 @@ int main(int argc, char* argv[]) {
                     running = false;
                 }
             }
-            if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
-                audio.playSound("jump");
-            }
         }
 
         const Uint8* keystate = SDL_GetKeyboardState(nullptr);
